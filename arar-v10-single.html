@@ -1,0 +1,2858 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>منصة مباني عرعر — خطّط منزلك واحسب تكلفته قبل المكتب الهندسي</title>
+<meta name="description" content="منصة لأهالي مدينة عرعر: صمّم توزيع غرفك بنموذج ثلاثي الأبعاد، احسب تكلفة البناء ببنود تفصيلية، اطّلع على اشتراطات أمانة الحدود الشمالية، واحصل على جدول تنفيذ شهري.">
+<meta name="theme-color" content="#020617">
+<meta property="og:type" content="website">
+<meta property="og:title" content="منصة مباني مدينة عرعر">
+<meta property="og:description" content="خطّط منزلك، احسب تكلفته، واعرف اشتراطات حيّك — قبل أن تدفع لمكتب هندسي.">
+<meta property="og:locale" content="ar_SA">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23064e3b'/%3E%3Cpath d='M14 34 32 18l18 16v14H14z' fill='%2310b981'/%3E%3Crect x='27' y='38' width='10' height='10' fill='%23064e3b'/%3E%3C/svg%3E">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+body { font-family: 'Cairo', sans-serif; }
+  .style-btn.active, .phase-btn.active, .tool-btn.active { background:#10b981!important; color:#020617!important; border-color:#10b981!important; }
+  .tab-btn.active { background:#10b981; color:#020617; }
+  #threeCanvasWrapper { touch-action:none; }
+  .inp { background:#020617; border:1px solid #1e293b; color:#e2e8f0; border-radius:.6rem; padding:.4rem .5rem; outline:none; width:100%; }
+  .inp:focus { border-color:#10b981; }
+  table.grid td, table.grid th { border-bottom:1px solid #1e293b; padding:.45rem .5rem; }
+  a.gov { color:#5eead4; text-decoration:underline; text-underline-offset:3px; }
+  a.gov:hover { color:#99f6e4; }
+  @media print {
+    .no-print { display:none!important; }
+    body { background:#fff!important; color:#000!important; }
+    .print-card { border:1px solid #ddd!important; background:#fff!important; color:#000!important; box-shadow:none!important; }
+    .print-text { color:#1e293b!important; }
+    .tab-panel { display:block!important; }
+  }
+
+/* لا تظهر لقطة النموذج إلا عند الطباعة */
+@media screen { #printShotWrap { display: none !important; } }
+/* الجداول على الجوال */
+@media (max-width: 640px) {
+  table.grid { display: block; overflow-x: auto; white-space: nowrap; }
+  table.grid input { min-width: 5.5rem; }
+}
+#chatBody::-webkit-scrollbar, #roomsEditor::-webkit-scrollbar { width: 6px; }
+#chatBody::-webkit-scrollbar-thumb, #roomsEditor::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+
+</style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-3 md:p-6">
+<div class="max-w-7xl mx-auto space-y-5">
+
+<header class="bg-slate-900/90 border border-slate-800 p-5 rounded-3xl shadow-2xl flex flex-col md:flex-row justify-between items-center gap-4">
+  <div class="flex items-center gap-4">
+    <div class="flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-slate-950 font-black text-2xl">🏛️</div>
+    <div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <h1 class="text-xl md:text-3xl font-black text-white">منصة مباني مدينة عرعر</h1>
+        <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] px-2 py-0.5 rounded-full font-extrabold">v9.0</span>
+      </div>
+      <p class="text-slate-400 text-xs mt-0.5">تصميم ثلاثي الأبعاد · تفصيل التكاليف · الجدول الزمني · اشتراطات وروابط أمانة منطقة الحدود الشمالية</p>
+    </div>
+  </div>
+  <div class="flex flex-wrap items-center gap-2 no-print">
+    <span id="saveHint" class="text-[10px] text-emerald-400 opacity-0 transition-opacity">تم الحفظ</span>
+    <button onclick="exportJSON()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold">⬇️ حفظ المشروع</button>
+    <label class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold cursor-pointer">⬆️ فتح مشروع
+      <input type="file" accept="application/json" onchange="importJSON(this)" class="hidden"></label>
+    <button onclick="resetData()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-2 rounded-xl text-xs font-bold">🔄 إعادة ضبط</button>
+    <button onclick="window.print()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-4 py-2 rounded-xl text-xs font-black">🖨️ طباعة التقرير</button>
+  </div>
+</header>
+
+<!-- شريط الملخص -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 print-card">
+  <div class="bg-slate-900 border border-emerald-500/30 rounded-2xl p-4 print-card">
+    <span class="text-[10px] text-emerald-400 font-bold block print-text">إجمالي التكلفة التقديرية</span>
+    <strong id="grandTotal" class="text-lg md:text-2xl font-black text-white print-text">0 ر.س</strong>
+  </div>
+  <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 print-card">
+    <span class="text-[10px] text-slate-400 font-bold block print-text">تكلفة المتر المربع</span>
+    <strong id="avgPerMeter" class="text-lg md:text-2xl font-black text-emerald-400 print-text">0</strong>
+  </div>
+  <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 print-card">
+    <span class="text-[10px] text-slate-400 font-bold block print-text">مسطح البناء الكلي</span>
+    <strong id="sumBuilt" class="text-lg md:text-2xl font-black text-blue-400 print-text">0 م²</strong>
+  </div>
+  <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 print-card">
+    <span class="text-[10px] text-slate-400 font-bold block print-text">مدة التنفيذ التقديرية</span>
+    <strong id="sumMonths" class="text-lg md:text-2xl font-black text-amber-400 print-text">0 شهر</strong>
+  </div>
+</div>
+
+<!-- التبويبات -->
+<nav class="flex flex-wrap gap-2 bg-slate-900 border border-slate-800 p-2 rounded-2xl no-print text-xs font-bold">
+  <button onclick="showTab('design')" id="tab-design" class="tab-btn active px-4 py-2 rounded-xl text-slate-300">🏠 التصميم والنموذج</button>
+  <button onclick="showTab('regs')" id="tab-regs" class="tab-btn px-4 py-2 rounded-xl text-slate-300">📜 الاشتراطات والتراخيص</button>
+  <button onclick="showTab('cost')" id="tab-cost" class="tab-btn px-4 py-2 rounded-xl text-slate-300">💰 التكاليف والأسعار</button>
+  <button onclick="showTab('time')" id="tab-time" class="tab-btn px-4 py-2 rounded-xl text-slate-300">📅 الجدول الزمني</button>
+  <button onclick="showTab('parties')" id="tab-parties" class="tab-btn px-4 py-2 rounded-xl text-slate-300">🏗️ الشركات والمقاولون</button>
+</nav>
+
+<!-- ================= تبويب التصميم ================= -->
+<section id="panel-design" class="tab-panel space-y-5">
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+    <div class="lg:col-span-4 space-y-5 no-print">
+      <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 space-y-3">
+        <h2 class="text-xs font-extrabold text-emerald-400 border-b border-slate-800 pb-2">📐 الأرض والمبنى</h2>
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div><label class="block text-slate-400 mb-1">مساحة الأرض (م²)</label>
+            <input type="number" id="landArea" value="600" min="60" oninput="recalcAll()" class="inp font-bold"></div>
+          <div><label class="block text-slate-400 mb-1">عدد الأدوار فوق الأرض</label>
+            <select id="modelFloors" onchange="recalcAll()" class="inp font-bold">
+              <option value="1">دور واحد</option><option value="2" selected>دورين</option><option value="3">ثلاثة أدوار</option>
+            </select></div>
+          <div><label class="block text-slate-400 mb-1">ارتفاع المبنى عن منسوب الأرض (م)</label>
+            <input type="number" id="raiseH" value="0.45" step="0.05" min="0" max="2.5" oninput="recalcAll()" class="inp font-bold"></div>
+          <div><label class="block text-slate-400 mb-1">عدد مواقف السيارات</label>
+            <input type="number" id="parkCount" value="2" min="0" max="12" oninput="recalcAll()" class="inp font-bold"></div>
+        </div>
+        <label class="flex items-center gap-2 bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-xs cursor-pointer">
+          <input type="checkbox" id="hasBasement" onchange="recalcAll()" class="accent-emerald-500">
+          <span class="font-bold text-slate-300">إضافة قبو (بدروم)</span>
+        </label>
+        <div id="basementBox" class="hidden grid grid-cols-2 gap-3 text-xs">
+          <div><label class="block text-slate-400 mb-1">مساحة القبو (م²)</label>
+            <input type="number" id="basementArea" value="200" min="20" oninput="recalcAll()" class="inp font-bold"></div>
+          <div><label class="block text-slate-400 mb-1">عمق القبو (م)</label>
+            <input type="number" id="basementDepth" value="3" step="0.1" min="2.2" max="5" oninput="recalcAll()" class="inp font-bold"></div>
+        </div>
+        <div class="flex justify-between items-center bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-xs">
+          <span class="text-slate-400 font-bold">نسبة البناء من الأرض (الدور الأرضي)</span>
+          <strong id="coverageRatio" class="text-white">0%</strong>
+        </div>
+        <div class="flex justify-between items-center bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-xs">
+          <span class="text-slate-400 font-bold">مسطح البناء (مجموع الغرف + الجدران والممرات)</span>
+          <strong id="builtAreaOut" class="text-emerald-400">0 م²</strong>
+        </div>
+        <div class="text-xs">
+          <label class="block text-slate-400 mb-1">مستوى التشطيب</label>
+          <select id="finishingLevel" onchange="recalcAll()" class="inp font-bold">
+            <option value="standard">تشطيب قياسي (اقتصادي)</option>
+            <option value="medium" selected>تشطيب مودرن (متوسط / ممتاز)</option>
+            <option value="luxury">تشطيب فاخر (سوبر ديلوكس)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 space-y-3">
+        <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+          <h2 class="text-xs font-extrabold text-emerald-400">🏡 الغرف — مساحة كل غرفة على حدة</h2>
+          <button onclick="addRoom()" class="text-[10px] bg-emerald-500 text-slate-950 px-2 py-1 rounded-lg font-black">+ غرفة</button>
+        </div>
+        <div id="roomsEditor" class="space-y-2 text-[11px] max-h-[26rem] overflow-y-auto pl-1"></div>
+        <div class="flex justify-between items-center text-[11px] bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+          <span class="text-slate-400 font-bold">مجموع مساحات الغرف</span>
+          <strong id="roomsSum" class="text-emerald-400">0 م²</strong>
+        </div>
+        <p class="text-[10px] text-slate-500">المساحة بالمتر المربع لكل غرفة. «الدور: تلقائي» يوزّع الغرفة حسب نوعها. مسطح البناء يُحسب تلقائيًا من هذه المساحات.</p>
+      </div>
+    </div>
+
+    <div class="lg:col-span-8 space-y-5">
+      <div class="bg-slate-900 p-5 rounded-3xl border border-emerald-500/40 space-y-4 no-print">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 pb-3 gap-3">
+          <div>
+            <h2 class="text-sm font-black text-emerald-400">🧊 النموذج المعماري ثلاثي الأبعاد</h2>
+            <p class="text-slate-400 text-[11px] mt-0.5">اسحب للتدوير · العجلة أو إصبعان للتقريب</p>
+          </div>
+          <div class="flex gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-[11px] shrink-0">
+            <button onclick="switchViewMode('exterior')" id="btnModeExterior" class="px-3 py-1.5 rounded-lg font-bold bg-emerald-500 text-slate-950">الخارجية</button>
+            <button onclick="switchViewMode('interior')" id="btnModeInterior" class="px-3 py-1.5 rounded-lg font-bold text-slate-400">المقطع الداخلي</button>
+            <button onclick="switchViewMode('phases')" id="btnModePhases" class="px-3 py-1.5 rounded-lg font-bold text-slate-400">مراحل البناء</button>
+          </div>
+        </div>
+        <div id="viewerContainer" class="relative w-full h-[22rem] sm:h-[30rem] bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden">
+          <div id="threeCanvasWrapper" class="w-full h-full cursor-grab"></div>
+          <div class="absolute bottom-3 right-3 bg-slate-900/85 border border-slate-700/80 px-3 py-2 rounded-xl text-xs pointer-events-none max-w-[70%]">
+            <span class="text-emerald-400 font-extrabold block" id="overlayTitle">الواجهة الخارجية</span>
+            <span class="text-slate-300 text-[10px]" id="overlayDesc">جاري التجهيز…</span>
+          </div>
+          <div id="canvasStats" class="absolute top-3 right-3 bg-slate-900/85 border border-slate-700/80 px-3 py-1.5 rounded-xl text-[10px] text-slate-300 pointer-events-none"></div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 text-[11px]">
+          <button onclick="toggleSunStudy()" id="btnSun" class="tool-btn bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-lg font-bold text-slate-300">☀️ دراسة الشمس والظل</button>
+          <button onclick="toggleWalk()" id="btnWalk" class="tool-btn bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-lg font-bold text-slate-300">🚶 جولة داخل المشروع</button>
+          <button onclick="toggleDims()" id="btnDims" class="tool-btn bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-lg font-bold text-slate-300">📐 الأبعاد</button>
+          <button onclick="downloadSnapshot()" class="bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-lg font-bold text-slate-300">📸 تصدير صورة</button>
+          <button onclick="toggleNight()" id="btnNight" class="tool-btn bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-lg font-bold text-slate-300">🌙 إضاءة ليلية</button>
+          <button onclick="toggleAutoRotate()" id="btnAuto" class="tool-btn active bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-lg font-bold text-slate-300">🔁 دوران تلقائي</button>
+          <button onclick="resetCamera()" class="bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-lg font-bold text-slate-300">🎯 إعادة الزاوية</button>
+          <span id="interiorTools" class="hidden items-center gap-2">
+            <select id="floorSelect" onchange="setInteriorFloor(this.value)" class="bg-slate-950 border border-slate-800 text-slate-200 px-2 py-1.5 rounded-lg font-bold outline-none"></select>
+            <button onclick="toggleFurniture()" id="btnFurn" class="tool-btn active bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-lg font-bold text-slate-300">🛋️ الأثاث</button>
+          </span>
+        </div>
+        <div id="sunPad" class="hidden bg-slate-950 border border-slate-800 rounded-2xl p-3 space-y-2 text-[11px]">
+          <div class="flex flex-wrap items-center gap-3">
+            <label class="text-slate-400">الساعة</label>
+            <input type="range" min="5" max="19" step="0.5" value="15" oninput="setSunHour(this.value)" class="flex-1 accent-emerald-500">
+            <strong id="hourOut" class="text-emerald-400 w-12 text-center">15:00</strong>
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <label class="text-slate-400">الشهر</label>
+            <input type="range" min="1" max="12" step="1" value="6" oninput="setSunMonth(this.value)" class="flex-1 accent-emerald-500">
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <label class="text-slate-400">اتجاه الواجهة</label>
+            <input type="range" min="0" max="359" step="5" value="180" oninput="setOrient(this.value)" class="flex-1 accent-emerald-500">
+            <strong id="orientOut" class="text-emerald-400 w-16 text-center">جنوب</strong>
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <label class="text-slate-400">قص المبنى</label>
+            <input type="range" min="0" max="100" step="1" value="0" oninput="setCut(this.value)" class="flex-1 accent-emerald-500">
+          </div>
+          <p id="sunReadout" class="text-slate-500"></p>
+          <p class="text-[10px] text-slate-600">مسار الشمس محسوب على إحداثيات عرعر (30.98° شمالًا) — يبيّن أي واجهة تتعرض للشمس وأين يقع ظل المبنى في كل ساعة وشهر.</p>
+        </div>
+
+        <div id="walkPad" class="hidden flex gap-2 text-[11px]">
+          <button onpointerdown="walkPush(1)" onpointerup="walkPush(0)" onpointerleave="walkPush(0)" class="flex-1 bg-emerald-500 text-slate-950 py-2 rounded-xl font-black">▲ تقدّم</button>
+          <button onpointerdown="walkPush(-1)" onpointerup="walkPush(0)" onpointerleave="walkPush(0)" class="flex-1 bg-slate-800 text-slate-200 py-2 rounded-xl font-black">▼ تراجع</button>
+          <span class="self-center text-slate-500 hidden sm:block">أو استخدم W A S D واسحب للنظر</span>
+        </div>
+
+        <div id="controlPanel3D" class="grid grid-cols-3 gap-2 text-xs">
+          <button onclick="setArchitectStyle('modern')" data-style="modern" class="style-btn active bg-slate-950 border border-slate-800 p-2.5 rounded-xl font-bold text-emerald-400">🏢 مودرن</button>
+          <button onclick="setArchitectStyle('classic')" data-style="classic" class="style-btn bg-slate-950 border border-slate-800 p-2.5 rounded-xl font-bold text-amber-400">🏛️ كلاسيكي</button>
+          <button onclick="setArchitectStyle('neoclassic')" data-style="neoclassic" class="style-btn bg-slate-950 border border-slate-800 p-2.5 rounded-xl font-bold text-blue-400">🏡 نيوكلاسيك</button>
+        </div>
+        <div id="controlPanelPhases" class="hidden grid-cols-3 gap-2 text-xs">
+          <button onclick="setConstructionPhase('foundations')" data-phase="foundations" class="phase-btn bg-slate-950 border border-slate-800 p-2.5 rounded-xl font-bold text-amber-400">🏗️ الحفر والقواعد</button>
+          <button onclick="setConstructionPhase('skeleton')" data-phase="skeleton" class="phase-btn bg-slate-950 border border-slate-800 p-2.5 rounded-xl font-bold text-blue-400">🧱 العظم</button>
+          <button onclick="setConstructionPhase('finishing')" data-phase="finishing" class="phase-btn active bg-slate-950 border border-slate-800 p-2.5 rounded-xl font-bold text-emerald-400">✨ التشطيب</button>
+        </div>
+      </div>
+
+      <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 space-y-3 print-card">
+        <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-2">
+          <h4 class="text-xs font-bold text-emerald-400 print-text">📏 جدول قياسات الغرف (الطول × العرض بالمتر)</h4>
+          <span id="scheduleTotal" class="text-[10px] text-slate-400 font-bold print-text"></span>
+        </div>
+        <div id="roomScheduleBody" class="space-y-3"></div>
+        <p id="scheduleNote" class="text-[10px] text-slate-500 print-text"></p>
+      </div>
+
+      <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 space-y-3 print-card">
+        <h4 class="text-xs font-bold text-emerald-400 border-b border-slate-800 pb-2 print-text">🧠 التقييم الهندسي</h4>
+        <div id="smartAdviceList" class="space-y-2 text-xs"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= تبويب الاشتراطات ================= -->
+<section id="panel-regs" class="tab-panel hidden space-y-5">
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+    <div class="lg:col-span-5 space-y-5">
+      <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 space-y-3">
+        <h2 class="text-xs font-extrabold text-emerald-400 border-b border-slate-800 pb-2">📍 موقع المشروع</h2>
+        <div class="space-y-3 text-xs">
+          <div><label class="block text-slate-400 mb-1">الأمانة / البلدية</label>
+            <input class="inp font-bold" value="أمانة منطقة الحدود الشمالية — مدينة عرعر" readonly></div>
+          <div><label class="block text-slate-400 mb-1">الحي</label>
+            <div class="flex gap-2">
+              <select id="district" onchange="renderRegs()" class="inp font-bold"></select>
+              <button onclick="addDistrict()" class="bg-slate-800 border border-slate-700 px-2 rounded-lg text-[10px] font-bold shrink-0">+ حي</button>
+            </div>
+          </div>
+          <div><label class="block text-slate-400 mb-1">نوع المبنى</label>
+            <select id="buildingType" onchange="recalcAll()" class="inp font-bold"></select></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-slate-400 mb-1">نسبة البناء المسموحة %</label>
+              <input type="number" id="regCoverage" value="60" min="10" max="100" oninput="renderRegs()" class="inp font-bold"></div>
+            <div><label class="block text-slate-400 mb-1">عدد الأدوار المسموح</label>
+              <input type="number" id="regFloors" value="2" min="1" max="20" oninput="renderRegs()" class="inp font-bold"></div>
+            <div><label class="block text-slate-400 mb-1">الارتداد الأمامي (م)</label>
+              <input type="number" id="regFront" value="0" step="0.5" oninput="renderRegs()" class="inp font-bold"></div>
+            <div><label class="block text-slate-400 mb-1">الارتداد الخلفي (م)</label>
+              <input type="number" id="regBack" value="2" step="0.5" oninput="renderRegs()" class="inp font-bold"></div>
+          </div>
+          <p class="text-[10px] text-amber-300/90 bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 leading-relaxed">
+            هذه الحقول تُعبّأ من كروكي الأرض أو رخصة البناء أو الارشادي المحلي للحي — النظام لا يجلبها تلقائيًا،
+            والقيم الظاهرة افتراضية للحساب فقط ولا تُعد مرجعًا نظاميًا.
+          </p>
+        </div>
+      </div>
+
+      <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 space-y-3">
+        <h2 class="text-xs font-extrabold text-emerald-400 border-b border-slate-800 pb-2">🔗 روابط الجهات الرسمية</h2>
+        <div id="govLinks" class="space-y-2 text-[11px]"></div>
+      </div>
+    </div>
+
+    <div class="lg:col-span-7 space-y-5">
+      <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 space-y-3 print-card">
+        <h2 class="text-xs font-extrabold text-emerald-400 border-b border-slate-800 pb-2 print-text">✅ فحص المطابقة مع البيانات المدخلة</h2>
+        <div id="regCheckList" class="space-y-2 text-xs"></div>
+      </div>
+
+      <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 space-y-3 print-card">
+        <h2 class="text-xs font-extrabold text-emerald-400 border-b border-slate-800 pb-2 print-text">📋 بنود يجب التحقق منها لنوع المبنى المختار</h2>
+        <div id="typeReqs" class="space-y-2 text-xs"></div>
+      </div>
+
+      <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 space-y-3 print-card">
+        <h2 class="text-xs font-extrabold text-emerald-400 border-b border-slate-800 pb-2 print-text">🧾 خطوات استخراج رخصة البناء</h2>
+        <div id="permitSteps" class="space-y-2 text-xs"></div>
+      </div>
+
+      <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 space-y-3 print-card">
+        <h2 class="text-xs font-extrabold text-emerald-400 border-b border-slate-800 pb-2 print-text">🕳️ اشتراطات القبو والمواقف</h2>
+        <div id="basementReqs" class="space-y-2 text-xs"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= تبويب التكاليف ================= -->
+<section id="panel-cost" class="tab-panel hidden space-y-5">
+  <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 space-y-3">
+    <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-2">
+      <h2 class="text-xs font-extrabold text-blue-400">📈 أسعار المواد — سوق عرعر</h2>
+      <div class="flex flex-wrap items-center gap-2">
+        <button onclick="aiUpdatePrices()" id="btnAiPrices" class="bg-blue-500 hover:bg-blue-400 text-slate-950 px-3 py-1.5 rounded-lg text-[11px] font-black">🤖 تحديث الأسعار تلقائيًا</button>
+        <span class="text-[10px] text-slate-500">التحديث: <input type="date" id="priceDate" onchange="renderPrices()" class="bg-slate-950 border border-slate-800 rounded px-1 text-slate-300"></span>
+      </div>
+    </div>
+    <p id="aiPriceStatus" class="text-[11px]"></p>
+    <div class="overflow-x-auto">
+      <table class="w-full grid text-[11px]" id="pricesTable"></table>
+    </div>
+    <p class="text-[10px] text-amber-300/90 bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 leading-relaxed">
+      الأسعار أدناه قيم ابتدائية قابلة للتعديل، وليست أسعارًا حيّة. الملف يعمل بدون خادم، ولا توجد جهة تنشر أسعار عرعر
+      بواجهة برمجية مفتوحة يمكن الاتصال بها من المتصفح مباشرة. عدّل السعر من عرض المورد وسجّل التاريخ والمصدر.
+    </p>
+  </div>
+
+  <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 space-y-4 print-card">
+    <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-2">
+      <h2 class="text-sm font-bold text-white print-text">📋 التفصيل المالي — كل بند على حدة</h2>
+      <div class="flex items-center gap-3">
+        <button onclick="exportCSV()" class="no-print bg-slate-800 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-[11px] font-bold">⬇️ تصدير Excel</button>
+        <span id="boqTotal" class="text-xs font-black text-emerald-400 print-text"></span>
+      </div>
+    </div>
+    <div id="boqBody" class="space-y-4"></div>
+    <p class="text-[10px] text-slate-500 print-text">الكميات محسوبة تلقائيًا من المساحات، ويمكن تعديل الكمية أو سعر الوحدة لأي بند وسينعكس على الإجمالي مباشرة.</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 no-print flex flex-col items-center">
+      <h4 class="text-xs font-bold text-slate-300 mb-2 w-full text-right">📊 توزيع التكلفة على المجموعات</h4>
+      <div class="w-56 h-56"><canvas id="budgetChart"></canvas></div>
+    </div>
+    <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 space-y-3 print-card">
+      <h4 class="text-xs font-bold text-amber-400 border-b border-slate-800 pb-2 print-text">💳 جدولة الدفعات الموصى بها</h4>
+      <div id="paymentPlan" class="space-y-2 text-xs"></div>
+      <hr class="border-slate-800">
+      <div class="space-y-2 text-xs no-print">
+        <input type="number" id="contractorQuote" placeholder="مبلغ عرض المقاول (ر.س)" oninput="recalcAll()" class="inp">
+        <div id="quoteResult" class="hidden p-2.5 rounded-xl font-bold border"></div>
+        <input type="number" id="userBudget" placeholder="ميزانيتك الإجمالية (ر.س)" oninput="recalcAll()" class="inp">
+        <div id="budgetAdvice" class="hidden p-2.5 rounded-xl font-bold border"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= تبويب الجدول الزمني ================= -->
+<section id="panel-time" class="tab-panel hidden space-y-5">
+  <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 space-y-3 print-card">
+    <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-2">
+      <h2 class="text-xs font-extrabold text-emerald-400 print-text">📅 خطة التنفيذ شهرًا بشهر</h2>
+      <span class="text-[10px] text-slate-400 no-print">تاريخ البدء:
+        <input type="date" id="startDate" onchange="renderTimeline()" class="bg-slate-950 border border-slate-800 rounded px-1 text-slate-300"></span>
+    </div>
+    <div id="timelineBody" class="space-y-3"></div>
+    <p class="text-[10px] text-slate-500 print-text">المدد تقديرية لمشروع سكني بمقاول واحد ومعدل عمالة معتاد، وتتأثر بالطقس والتوريد وتعليق العمل بين مراحل الفحص.</p>
+  </div>
+  <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 space-y-3 print-card">
+    <h2 class="text-xs font-extrabold text-emerald-400 border-b border-slate-800 pb-2 print-text">🧱 ملخص المراحل الرئيسية</h2>
+    <div id="phaseSummary" class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs"></div>
+  </div>
+</section>
+
+<!-- ================= تبويب الشركات والمقاولين ================= -->
+<section id="panel-parties" class="tab-panel hidden space-y-5">
+  <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 space-y-3">
+    <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+      <h2 class="text-xs font-extrabold text-emerald-400">🏢 شركات ومورّدون — العروض والأسعار</h2>
+      <button onclick="addCompany()" class="text-[10px] bg-emerald-500 text-slate-950 px-2 py-1 rounded-lg font-black">+ إضافة</button>
+    </div>
+    <div class="overflow-x-auto"><table class="w-full grid text-[11px]" id="companiesTable"></table></div>
+    <p class="text-[10px] text-slate-500">أضف الشركات التي أخذت منها عروضًا وقارنها. البيانات تبقى في المتصفح خلال الجلسة فقط.</p>
+  </div>
+
+  <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 space-y-3">
+    <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+      <h2 class="text-xs font-extrabold text-emerald-400">👷 المقاولون والعمالة — الأسعار المرجعية</h2>
+      <button onclick="addContractor()" class="text-[10px] bg-emerald-500 text-slate-950 px-2 py-1 rounded-lg font-black">+ إضافة</button>
+    </div>
+    <div class="overflow-x-auto"><table class="w-full grid text-[11px]" id="contractorsTable"></table></div>
+  </div>
+
+  <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 space-y-3">
+    <h2 class="text-xs font-extrabold text-emerald-400 border-b border-slate-800 pb-2">📝 روابط التسجيل لدى الجهة المختصة لكل طلب</h2>
+    <div id="registryLinks" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]"></div>
+  </div>
+</section>
+
+</div>
+
+<div id="printShotWrap" class="hidden mt-6">
+  <img id="reportShot" alt="النموذج ثلاثي الأبعاد" style="width:100%;border:1px solid #ddd;border-radius:12px">
+</div>
+
+<footer class="max-w-7xl mx-auto mt-6 mb-4 print-card">
+  <div class="bg-slate-900 border border-amber-500/30 rounded-2xl p-4 text-[11px] text-slate-400 leading-relaxed print-text">
+    <strong class="text-amber-400 print-text">تنويه:</strong>
+    جميع المخرجات في هذه المنصة تقديرات استرشادية لأغراض التخطيط المبدئي فقط، ولا تُعد مخططًا هندسيًا ولا حصرًا إنشائيًا
+    ولا مرجعًا نظاميًا. الكميات مبنية على معدلات تقريبية وليست ناتجة عن تصميم إنشائي، والأسعار متوسطات سوقية تتغير باستمرار،
+    والاشتراطات المذكورة قائمة تحقق إرشادية مصدرها الجهات الرسمية المرتبطة داخل المنصة.
+    لا يجوز البناء أو التعاقد اعتمادًا على هذه المخرجات دون مكتب هندسي معتمد ورخصة بناء سارية.
+    المنصة غير مسؤولة عن أي قرار مالي أو إنشائي يُتخذ بناءً عليها.
+  </div>
+</footer>
+
+<button onclick="toggleChat()" class="no-print fixed bottom-5 left-5 z-40 bg-emerald-500 hover:bg-emerald-400 text-slate-950 w-14 h-14 rounded-full shadow-2xl font-black text-xl" title="استشارة">💬</button>
+<div id="chatPanel" class="hidden no-print fixed bottom-24 left-5 z-40 w-[92vw] sm:w-96 bg-slate-900 border border-emerald-500/40 rounded-3xl shadow-2xl overflow-hidden flex flex-col" style="max-height:72vh">
+  <div class="flex justify-between items-center px-4 py-3 border-b border-slate-800 bg-slate-950">
+    <div>
+      <strong class="text-emerald-400 text-xs block">مستشار البناء الذكي</strong>
+      <span class="text-[10px] text-slate-500">يعرف تفاصيل مشروعك ويبحث في المصادر</span>
+    </div>
+    <button onclick="toggleChat(false)" class="text-slate-400 font-black">×</button>
+  </div>
+  <div id="chatBody" class="flex-1 overflow-y-auto p-3 space-y-2">
+    <div class="text-right"><div class="inline-block max-w-[92%] rounded-2xl px-3 py-2 text-[12px] bg-slate-800 text-slate-200">
+      اسألني عن أي شيء يخص مشروعك: التكلفة، الاشتراطات، المواد، المقاولين، أو مراحل التنفيذ.
+    </div></div>
+  </div>
+  <div class="px-3 pb-2 flex flex-wrap gap-1.5">
+    <button onclick="sendChat('هل تكلفة مشروعي منطقية مقارنة بأسعار السوق؟')" class="text-[10px] bg-slate-800 border border-slate-700 px-2 py-1 rounded-lg text-slate-300">تقييم التكلفة</button>
+    <button onclick="sendChat('ما الأوراق والخطوات المطلوبة لاستخراج رخصة البناء لمشروعي؟')" class="text-[10px] bg-slate-800 border border-slate-700 px-2 py-1 rounded-lg text-slate-300">الرخصة</button>
+    <button onclick="sendChat('كيف أوفر في تكلفة مشروعي دون التأثير على الجودة؟')" class="text-[10px] bg-slate-800 border border-slate-700 px-2 py-1 rounded-lg text-slate-300">التوفير</button>
+    <button onclick="sendChat('ما الأخطاء الشائعة في توزيع الغرف في مخططي الحالي؟')" class="text-[10px] bg-slate-800 border border-slate-700 px-2 py-1 rounded-lg text-slate-300">مراجعة المخطط</button>
+  </div>
+  <div class="p-3 border-t border-slate-800 flex gap-2">
+    <textarea id="chatInput" onkeydown="chatKey(event)" rows="1" placeholder="اكتب سؤالك…" class="inp resize-none text-[12px]"></textarea>
+    <button onclick="sendChat()" class="bg-emerald-500 text-slate-950 px-4 rounded-xl font-black">↑</button>
+  </div>
+</div>
+
+<script>
+/* منصة مباني عرعر — البيانات القابلة للتحديث */
+const APP = {
+  rooms: [
+    { name:'مجلس رجال',    type:'majlis',  count:1, area:36, floor:'0' },
+    { name:'مجلس نساء',    type:'majlis',  count:1, area:30, floor:'0' },
+    { name:'صالة معيشة',   type:'hall',    count:1, area:45, floor:'0' },
+    { name:'مطبخ',         type:'kitchen', count:1, area:20, floor:'0' },
+    { name:'غرفة طعام',    type:'dining',  count:1, area:18, floor:'0' },
+    { name:'مستودع',       type:'store',   count:1, area:8,  floor:'0' },
+    { name:'دورة مياه',    type:'bath',    count:2, area:6,  floor:'0' },
+    { name:'الدرج',        type:'stair',   count:1, area:12, floor:'auto' },
+    { name:'غرفة نوم',     type:'bedroom', count:3, area:25, floor:'1' },
+    { name:'غرفة نوم رئيسية', type:'bedroom', count:1, area:32, floor:'1' },
+    { name:'دورة مياه',    type:'bath',    count:3, area:6,  floor:'1' },
+    { name:'صالة عائلية',  type:'hall',    count:1, area:35, floor:'1' }
+  ],
+  districts: ['المساعدية','المروج','الصالحية','الناصرية','النسيم','المنصورية','الفيصلية','المنتزه','الشروق','الربوة','مخطط الإسكان','حي آخر'],
+  companies: [
+    { name:'', activity:'خرسانة جاهزة', phone:'', price:'', link:'' },
+    { name:'', activity:'حديد تسليح',   phone:'', price:'', link:'' },
+    { name:'', activity:'بلوك وإسمنت',  phone:'', price:'', link:'' }
+  ],
+  contractors: [
+    { name:'', trade:'مقاول عظم',        unit:'م² مسطح', price:'', phone:'', reg:'sca' },
+    { name:'', trade:'مقاول تشطيب',      unit:'م² مسطح', price:'', phone:'', reg:'sca' },
+    { name:'', trade:'كهربائي',          unit:'نقطة',    price:'', phone:'', reg:'ajeer' },
+    { name:'', trade:'سباك',             unit:'نقطة',    price:'', phone:'', reg:'ajeer' },
+    { name:'', trade:'لياس (بياض)',      unit:'م²',      price:'', phone:'', reg:'ajeer' },
+    { name:'', trade:'بلاط ورخام',       unit:'م²',      price:'', phone:'', reg:'ajeer' }
+  ],
+  prices: {
+    steel:{ label:'حديد التسليح', unit:'طن', v:2850, src:'' },
+    concrete:{ label:'خرسانة جاهزة', unit:'م³', v:215, src:'' },
+    block:{ label:'بلوك إسمنتي 20سم', unit:'حبة', v:3.2, src:'' },
+    cement:{ label:'إسمنت', unit:'كيس 50كجم', v:16.5, src:'' },
+    sand:{ label:'رمل', unit:'نقلة', v:450, src:'' },
+    gravel:{ label:'بحص / صبة', unit:'م³', v:95, src:'' },
+    tiles:{ label:'سيراميك / بورسلان', unit:'م²', v:75, src:'' },
+    marble:{ label:'رخام', unit:'م²', v:220, src:'' },
+    paint:{ label:'دهانات (توريد وتركيب)', unit:'م²', v:38, src:'' },
+    waterproof:{ label:'عزل مائي', unit:'م²', v:45, src:'' },
+    thermal:{ label:'عزل حراري', unit:'م²', v:35, src:'' },
+    alum:{ label:'نوافذ ألمنيوم', unit:'م²', v:420, src:'' },
+    door:{ label:'باب خشب داخلي', unit:'عدد', v:950, src:'' },
+    interlock:{ label:'بلاط انترلوك', unit:'م²', v:70, src:'' },
+    labor:{ label:'عامل بناء (يومية)', unit:'يوم', v:150, src:'' }
+  },
+  boq: {},
+  cityDistrict: 'المساعدية'
+};
+
+const BUILDING_TYPES = {
+  villa:    { label:'فيلا سكنية', rate:1.00, parkPer:'وحدة سكنية' },
+  apartment:{ label:'عمارة سكنية (شقق)', rate:1.05, parkPer:'شقة' },
+  commercial:{ label:'مبنى تجاري / محلات', rate:1.15, parkPer:'كل 50 م² مسطح تجاري' },
+  hospital: { label:'مستشفى / مركز طبي', rate:1.95, parkPer:'كل سرير' },
+  cinema:   { label:'سينما / صالة عروض', rate:1.75, parkPer:'كل مقعد' },
+  school:   { label:'مدرسة / معهد', rate:1.45, parkPer:'كل فصل' },
+  mosque:   { label:'مسجد', rate:1.30, parkPer:'كل 50 مصلٍّ' },
+  hotel:    { label:'فندق / شقق مفروشة', rate:1.60, parkPer:'كل غرفة' },
+  warehouse:{ label:'مستودع / ورشة', rate:0.65, parkPer:'كل 200 م²' }
+};
+
+const TYPE_REQS = {
+  villa:['نسبة البناء وعدد الأدوار والارتدادات حسب كروكي الأرض والارشادي المحلي للحي','ارتفاع السور وسترة السطح','موقف سيارة واحد على الأقل داخل حدود الأرض','خزان أرضي وبيارة/ربط مجاري حسب توفر الشبكة','عزل مائي وحراري وفق كود البناء السعودي'],
+  apartment:['عدد المواقف بحسب عدد الشقق','السلالم ومخارج الطوارئ وعرضها','المصعد إذا تجاوز عدد الأدوار الحد النظامي','فواصل الخصوصية بين الوحدات','غرفة كهرباء ومحول إن لزم'],
+  commercial:['اشتراطات الواجهات التجارية واللوحات','المواقف حسب المسطح التجاري','مخارج الطوارئ وأنظمة الإنذار والإطفاء','دورات مياه للعموم وذوي الإعاقة','فصل مداخل البضائع عن مداخل الزوار'],
+  hospital:['موافقة وزارة الصحة على المخطط والتصنيف قبل الرخصة','أنظمة الحريق والإنذار والإخلاء وفق SBC 801','غرف العزل والأشعة ومتطلبات التدريع','معالجة وتصريف النفايات الطبية','مولد كهرباء احتياطي وغرفة أكسجين','مسارات وسيارات الإسعاف ومهبط إن طُلب'],
+  cinema:['موافقة هيئة الترفيه والتصنيف قبل الرخصة','سعة الإشغال وعدد وعرض مخارج الطوارئ','أنظمة الإطفاء والإنذار والدخان','عزل صوتي ومعالجة صوتية','أماكن ذوي الإعاقة وخطوط الرؤية','المواقف حسب عدد المقاعد'],
+  school:['موافقة وزارة التعليم على الموقع والمخطط','مساحات الفصول والملاعب والفناء','مخارج الطوارئ ومسارات الإخلاء','فصل حركة الحافلات عن المشاة','دورات مياه بنسب أعداد الطلاب'],
+  mosque:['موافقة الشؤون الإسلامية على الموقع والمساحة','دورات المياه والميضأة وتصريفها','المئذنة وارتفاعها ومكبرات الصوت','مواقف ومداخل تفريغ في أوقات الذروة'],
+  hotel:['ترخيص وزارة السياحة وتصنيف المنشأة','مخارج الطوارئ وسلالم الحريق','المواقف حسب عدد الغرف','مطبخ ومغسلة ومتطلبات الصحة'],
+  warehouse:['استخدام الأرض صناعي/مستودعات في المخطط المعتمد','ارتفاع المبنى وأحمال الأرضية','مسارات الشاحنات وأرصفة التحميل','أنظمة إطفاء مناسبة للمواد المخزنة']
+};
+
+const GOV_LINKS = [
+  { t:'أمانة منطقة الحدود الشمالية — البوابة الرسمية', u:'https://arar-mu.momah.gov.sa/ar', d:'الخدمات الإلكترونية، الاستعلام عن قطعة أرض، المكاتب الاستشارية المؤهلة' },
+  { t:'صفحة مدينة عرعر — الارشادي المحلي التفصيلي واستعمالات الأراضي', u:'https://arar-mu.momah.gov.sa/ar/node/4777', d:'وثائق المخطط المحلي ونسب التعمير داخل الوحدات التخطيطية' },
+  { t:'أمانة الحدود الشمالية على منصة بلدي', u:'https://www.balady.gov.sa/ar/%D8%A3%D9%85%D8%A7%D9%86%D8%A9-%D9%85%D9%86%D8%B7%D9%82%D8%A9-%D8%A7%D9%84%D8%AD%D8%AF%D9%88%D8%AF-%D8%A7%D9%84%D8%B4%D9%85%D8%A7%D9%84%D9%8A%D8%A9', d:'بيانات الفرع — هاتف 014-6611500، عرعر' },
+  { t:'منصة بلدي — كل الخدمات البلدية', u:'https://balady.gov.sa/ar/all-services', d:'إصدار وتجديد الرخص، شهادة الإشغال، تسجيل المقاول' },
+  { t:'خدمة إصدار رخصة بناء', u:'https://balady.gov.sa/en/services/issuing-building-permit', d:'إجراءات ومتطلبات إصدار الرخصة عبر مكتب هندسي مفوّض' },
+  { t:'الاستعلام عن رخصة بناء', u:'https://apps.balady.gov.sa/Eservices/Inquiries/inquiry', d:'التحقق من حالة الرخصة إلكترونيًا' },
+  { t:'اشتراطات إنشاء المباني السكنية (PDF — الوزارة)', u:"https://momah.gov.sa/sites/default/files/2024-07/ashtratat%20a'nsha%20almbany%20alsknyt%20m%60%20alqrar.pdf", d:'الوثيقة المعتمدة للارتفاعات والارتدادات ونسب البناء للمباني السكنية' },
+  { t:'الأنظمة واللوائح — وزارة البلديات والإسكان', u:'https://www.momra.gov.sa/Regulations', d:'الأدلة والاشتراطات والقواعد لكل نوع مبنى' },
+  { t:'كود البناء السعودي', u:'https://sbc.gov.sa', d:'الإصدارات والأدلة الاسترشادية ومتطلبات السلامة' },
+  { t:'اللائحة التنفيذية لنظام تطبيق كود البناء السعودي (PDF)', u:'https://momah.gov.sa/sites/default/files/2022-03/allayht-altnfydhyt-lnzam-ttbyq-kwd-albna-alswdy-1443.pdf', d:'التزامات المالك والمكتب الهندسي والمقاول' },
+  { t:'منصة استطلاع — مشروعات لوائح أمانة عرعر', u:'https://istitlaa.ncc.gov.sa/ar/Municipality/arar/Pages/default.aspx', d:'اللوائح المطروحة للمرئيات قبل الاعتماد' }
+];
+
+const REGISTRY_LINKS = [
+  { t:'الهيئة السعودية للمقاولين — التسجيل', u:'https://sca.sa/ar/reg', d:'تسجيل المقاولين وعضوية الهيئة' },
+  { t:'منصة مقاول — إجراءات التسجيل', u:'https://muqawil.org/ar/registrationprocess', d:'التسجيل، تقييم المقاولين، الموردون، مدراء المشاريع' },
+  { t:'تسجيل المقاول لدى منصة بلدي', u:'https://balady.gov.sa/ar/all-services', d:'ربط المقاول برخصة البناء والمستندات المطلوبة' },
+  { t:'منصة أجير — تصاريح العمالة المؤقتة', u:'https://ajeer.qiwa.sa/landing/', d:'تنظيم العمل المؤقت وتصاريح العمالة بين المنشآت' },
+  { t:'المكاتب الهندسية المؤهلة لدى الأمانة', u:'https://arar-mu.momah.gov.sa/ar', d:'خدمة الاستعلام عن المكاتب الاستشارية المؤهلة' }
+];
+
+
+</script>
+<script>
+/* منصة مباني عرعر — منطق التطبيق */
+/* منصة مباني عرعر — منطق التطبيق: الغرف، التكاليف، الاشتراطات، الجدول الزمني */
+/* ========================= الحالة ========================= */
+/* ========================= أدوات ========================= */
+const $ = id => document.getElementById(id);
+const num = (id, f) => { const e=$(id); const v=parseFloat(e?e.value:NaN); return isNaN(v)?(f||0):v; };
+const rs = v => Math.round(v).toLocaleString('ar-SA') + ' ر.س';
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function showTab(name){
+  ['design','regs','cost','time','parties'].forEach(t=>{
+    $('panel-'+t).classList.toggle('hidden', t!==name);
+    $('tab-'+t).classList.toggle('active', t===name);
+  });
+  if(name==='design' && typeof onViewerResize==='function') setTimeout(onViewerResize, 60);
+}
+
+/* ========================= الغرف ========================= */
+const ROOM_TYPES = { majlis:'مجلس', hall:'صالة', kitchen:'مطبخ', dining:'طعام', bedroom:'غرفة نوم',
+  bath:'دورة مياه', store:'مستودع', stair:'درج', office:'مكتب', ward:'جناح/عنبر', hallway:'ممر', other:'أخرى' };
+
+function renderRooms(){
+  const floorsN = Math.max(1, Math.round(num('modelFloors',2)));
+  const hasB = $('hasBasement').checked;
+  let opts = '<option value="auto">تلقائي</option>';
+  if(hasB) opts += '<option value="-1">القبو</option>';
+  ['الأرضي','الأول','الثاني'].slice(0,floorsN).forEach((n,i)=> opts += '<option value="'+i+'">'+n+'</option>');
+
+  $('roomsEditor').innerHTML = APP.rooms.map((r,i)=>
+    '<div class="bg-slate-950 border border-slate-800 rounded-xl p-2 grid grid-cols-12 gap-1.5 items-center">'
+    + '<input class="inp col-span-4" value="'+esc(r.name)+'" oninput="editRoom('+i+',\'name\',this.value)">'
+    + '<select class="inp col-span-3" onchange="editRoom('+i+',\'type\',this.value)">'
+      + Object.keys(ROOM_TYPES).map(k=>'<option value="'+k+'"'+(k===r.type?' selected':'')+'>'+ROOM_TYPES[k]+'</option>').join('')
+    + '</select>'
+    + '<input type="number" min="1" max="30" class="inp col-span-2 text-center" value="'+r.count+'" title="العدد" oninput="editRoom('+i+',\'count\',this.value)">'
+    + '<input type="number" min="2" step="1" class="inp col-span-2 text-center" value="'+r.area+'" title="المساحة م²" oninput="editRoom('+i+',\'area\',this.value)">'
+    + '<button onclick="delRoom('+i+')" class="col-span-1 text-red-400 font-black">×</button>'
+    + '<select class="inp col-span-12 mt-1 text-[10px]" onchange="editRoom('+i+',\'floor\',this.value)">'
+      + opts.replace('value="'+r.floor+'"','value="'+r.floor+'" selected')
+    + '</select>'
+    + '</div>').join('');
+}
+function editRoom(i,k,v){
+  APP.rooms[i][k] = (k==='count'||k==='area') ? Math.max(1, parseFloat(v)||1) : v;
+  recalcAll(k==='name');
+}
+function addRoom(){ APP.rooms.push({name:'غرفة جديدة', type:'other', count:1, area:20, floor:'auto'}); recalcAll(); }
+function delRoom(i){ APP.rooms.splice(i,1); recalcAll(); }
+
+function roomsNetArea(){ return APP.rooms.filter(r=>r.floor!=='-1').reduce((s,r)=>s+r.count*r.area,0); }
+function builtAreaCalc(){ return Math.round(roomsNetArea()*1.22); }
+
+function readRooms(){
+  const c = { bedrooms:0, bathrooms:0, majlis:0, outMajlis:0, halls:0, kitchens:0 };
+  APP.rooms.forEach(r=>{
+    if(r.type==='bedroom') c.bedrooms += r.count;
+    else if(r.type==='bath') c.bathrooms += r.count;
+    else if(r.type==='majlis') c.majlis += r.count;
+    else if(r.type==='hall') c.halls += r.count;
+    else if(r.type==='kitchen') c.kitchens += r.count;
+  });
+  return c;
+}
+
+/* توزيع الغرف على الأدوار — يغذّي النموذج ثلاثي الأبعاد وجدول القياسات */
+function buildFloorPrograms(P){
+  const map = {}; const upper = [];
+  const floors = P.floors;
+  for(let f=(P.hasBasement?-1:0); f<floors; f++) map[f] = [];
+  for(let f=1; f<floors; f++) upper.push(f);
+
+  let bathGround = 0, rr = 0;
+  APP.rooms.forEach(r=>{
+    for(let k=0;k<r.count;k++){
+      const label = r.name + (r.count>1 ? ' '+(k+1) : '');
+      const item = { type:r.type, label:label, area:r.area };
+      let f;
+      if(r.floor!=='auto'){ f = parseInt(r.floor,10); }
+      else if(r.type==='stair'){ Object.keys(map).forEach(k2=>{ if(+k2>=0) map[k2].push({type:'stair',label:'الدرج',area:r.area}); }); continue; }
+      else if(r.type==='bedroom' && upper.length){ f = upper[rr++ % upper.length]; }
+      else if(r.type==='bath'){ f = (bathGround++ < 2 || !upper.length) ? 0 : upper[rr++ % upper.length]; }
+      else f = 0;
+      if(map[f] === undefined) f = 0;
+      map[f].push(item);
+    }
+  });
+  Object.keys(map).forEach(f=>{ if(map[f].length===0) map[f].push({type:'hall',label:'مساحة مفتوحة',area:30}); });
+  return map;
+}
+
+/* ========================= بنود التكلفة (BOQ) ========================= */
+const P_ = k => APP.prices[k].v;
+
+const BOQ = [
+ { id:'g1', name:'الدراسات والتراخيص', color:'text-amber-400', items:[
+   { id:'design',  n:'التصميم المعماري والإنشائي', u:'م²', q:c=>c.built, p:()=>9 },
+   { id:'super',   n:'الإشراف الهندسي أثناء التنفيذ', u:'م²', q:c=>c.built, p:()=>6 },
+   { id:'permit',  n:'رسوم رخصة البناء والتأمين', u:'مقطوع', q:()=>1, p:c=>3000+c.built*4 },
+   { id:'soil',    n:'تقرير فحص التربة', u:'مقطوع', q:()=>1, p:()=>3800 },
+   { id:'survey',  n:'الرفع المساحي وتحديد الأركان', u:'مقطوع', q:()=>1, p:()=>1500 }
+ ]},
+ { id:'g2', name:'الحفر والأساسات', color:'text-blue-400', items:[
+   { id:'exc',     n:'الحفر والردم ونقل المخلفات', u:'م³', q:c=>Math.round(c.foot*1.2), p:()=>22 },
+   { id:'clean',   n:'خرسانة نظافة', u:'م³', q:c=>Math.round(c.foot*0.06), p:()=>P_('concrete')+70 },
+   { id:'footC',   n:'خرسانة القواعد والميد والرقاب', u:'م³', q:c=>Math.round(c.built*0.11), p:()=>P_('concrete')+95 },
+   { id:'footS',   n:'حديد تسليح الأساسات', u:'طن', q:c=>+(c.built*0.012).toFixed(2), p:()=>P_('steel')+700 },
+   { id:'footIns', n:'عزل الأساسات (بيتومين)', u:'م²', q:c=>Math.round(c.foot*1.1), p:()=>P_('waterproof')*0.7 }
+ ]},
+ { id:'g3', name:'الهيكل الخرساني', color:'text-blue-400', items:[
+   { id:'cols',    n:'خرسانة الأعمدة والجسور', u:'م³', q:c=>Math.round(c.built*0.12), p:()=>P_('concrete')+120 },
+   { id:'slab',    n:'خرسانة الأسقف', u:'م³', q:c=>Math.round(c.built*0.19), p:()=>P_('concrete')+110 },
+   { id:'steelS',  n:'حديد تسليح الهيكل', u:'طن', q:c=>+(c.built*0.026).toFixed(2), p:()=>P_('steel')+700 },
+   { id:'form',    n:'الشدة الخشبية والصب والمضخة', u:'م²', q:c=>c.built, p:()=>55 },
+   { id:'stairC',  n:'خرسانة الدرج والمناور', u:'مقطوع', q:c=>c.floors, p:()=>6500 }
+ ]},
+ { id:'g4', name:'أعمال المباني', color:'text-emerald-400', items:[
+   { id:'blockW',  n:'بناء البلوك للجدران الخارجية والداخلية', u:'م²', q:c=>Math.round(c.wallArea), p:()=>P_('block')*12.5+28 },
+   { id:'lintel',  n:'جسور علوية وأعتاب الفتحات', u:'م.ط', q:c=>Math.round(c.openings*3.2), p:()=>65 },
+   { id:'mortar',  n:'إسمنت ورمل أعمال المباني', u:'كيس', q:c=>Math.round(c.built*0.55), p:()=>P_('cement') }
+ ]},
+ { id:'g5', name:'التمديدات الكهربائية والميكانيكية', color:'text-emerald-400', items:[
+   { id:'elecR',   n:'تأسيس الكهرباء (مواسير وعلب وأسلاك)', u:'نقطة', q:c=>Math.round(c.built*0.35), p:()=>145 },
+   { id:'elecF',   n:'تشطيب الكهرباء (مفاتيح وأفياش ولوحات)', u:'نقطة', q:c=>Math.round(c.built*0.35), p:()=>95 },
+   { id:'plumbR',  n:'تأسيس السباكة (تغذية وصرف)', u:'م²', q:c=>c.built, p:()=>62 },
+   { id:'plumbF',  n:'أطقم الحمامات والخلاطات والتركيب', u:'دورة مياه', q:c=>c.baths, p:()=>3200 },
+   { id:'hvac',    n:'تكييف (وحدات وتمديدات)', u:'طن تبريد', q:c=>Math.round(c.built/22), p:()=>3400 },
+   { id:'tank',    n:'خزان أرضي وعلوي ومضخة', u:'مقطوع', q:()=>1, p:()=>9500 }
+ ]},
+ { id:'g6', name:'اللياسة والعزل', color:'text-emerald-400', items:[
+   { id:'plasterIn',n:'لياسة داخلية', u:'م²', q:c=>Math.round(c.wallArea*1.6), p:()=>34 },
+   { id:'plasterEx',n:'لياسة خارجية', u:'م²', q:c=>Math.round(c.facade), p:()=>42 },
+   { id:'roofIns', n:'عزل مائي وحراري للسطح', u:'م²', q:c=>c.foot, p:()=>P_('waterproof')+P_('thermal') },
+   { id:'wetIns',  n:'عزل الحمامات والمطابخ', u:'م²', q:c=>c.baths*14, p:()=>P_('waterproof') }
+ ]},
+ { id:'g7', name:'الأرضيات والرخام', color:'text-emerald-400', items:[
+   { id:'tileF',   n:'سيراميك/بورسلان أرضيات (توريد وتركيب)', u:'م²', q:c=>Math.round(c.built*0.92), p:()=>P_('tiles')+42 },
+   { id:'tileW',   n:'سيراميك جدران الحمامات والمطابخ', u:'م²', q:c=>c.baths*22+c.kitchens*14, p:()=>P_('tiles')+48 },
+   { id:'marbleS', n:'رخام الدرج والعتبات', u:'م.ط', q:c=>c.floors*14, p:()=>P_('marble') },
+   { id:'skirt',   n:'وزرة (نعلات) ومحيطات', u:'م.ط', q:c=>Math.round(c.built*0.85), p:()=>28 }
+ ]},
+ { id:'g8', name:'الأبواب والنوافذ', color:'text-emerald-400', items:[
+   { id:'doorMain',n:'الباب الرئيسي', u:'عدد', q:()=>1, p:()=>7500 },
+   { id:'doorIn',  n:'الأبواب الداخلية', u:'عدد', q:c=>c.doors, p:()=>P_('door') },
+   { id:'windows', n:'نوافذ ألمنيوم ودبل جلاس', u:'م²', q:c=>Math.round(c.facade*0.16), p:()=>P_('alum') },
+   { id:'ironW',   n:'أعمال الحديد (حمايات ومظلات ودرابزين)', u:'م.ط', q:c=>Math.round(c.perimeter*0.6), p:()=>190 }
+ ]},
+ { id:'g9', name:'الدهانات والديكور', color:'text-emerald-400', items:[
+   { id:'paintIn', n:'دهانات داخلية', u:'م²', q:c=>Math.round(c.wallArea*1.6), p:()=>P_('paint') },
+   { id:'paintEx', n:'دهانات خارجية وواجهات', u:'م²', q:c=>Math.round(c.facade), p:()=>P_('paint')+18 },
+   { id:'gypsum',  n:'جبس بورد وإضاءة مخفية', u:'م²', q:c=>Math.round(c.built*0.45), p:()=>110 }
+ ]},
+ { id:'g10', name:'الأعمال الخارجية', color:'text-amber-400', items:[
+   { id:'fence',   n:'سور الأرض (بناء ولياسة ودهان)', u:'م.ط', q:c=>Math.round(c.landPerimeter), p:()=>520 },
+   { id:'gates',   n:'بوابة سيارات وبوابة مشاة', u:'عدد', q:()=>2, p:()=>4200 },
+   { id:'park',    n:'مظلة مواقف السيارات', u:'موقف', q:c=>c.parking, p:()=>3800 },
+   { id:'yard',    n:'تبليط الفناء (انترلوك) وتنسيق', u:'م²', q:c=>Math.round(c.yard), p:()=>P_('interlock')+35 },
+   { id:'sewer',   n:'بيارة/ربط صرف صحي وتوصيل خدمات', u:'مقطوع', q:()=>1, p:()=>14000 }
+ ]},
+ { id:'g11', name:'القبو (بدروم)', color:'text-purple-400', only:'basement', items:[
+   { id:'bExc',    n:'حفر عميق ونقل ناتج الحفر', u:'م³', q:c=>Math.round(c.bArea*c.bDepth*1.35), p:()=>28 },
+   { id:'bWall',   n:'جدران ساندة خرسانية', u:'م²', q:c=>Math.round(c.bPerimeter*c.bDepth), p:()=>310 },
+   { id:'bSlab',   n:'أرضية القبو الخرسانية', u:'م²', q:c=>c.bArea, p:()=>185 },
+   { id:'bIns',    n:'عزل القبو المائي (بيتومين ومشمع)', u:'م²', q:c=>Math.round(c.bArea+c.bPerimeter*c.bDepth), p:()=>P_('waterproof')+25 },
+   { id:'bDrain',  n:'مضخة صرف ومنور وتهوية', u:'مقطوع', q:()=>1, p:()=>12000 },
+   { id:'bFinish', n:'تشطيب القبو (لياسة وأرضيات وكهرباء)', u:'م²', q:c=>c.bArea, p:()=>620 }
+ ]}
+];
+
+function costContext(){
+  const floors = Math.max(1, Math.round(num('modelFloors',2)));
+  const built = builtAreaCalc();
+  const land = Math.max(60, num('landArea',600));
+  const foot = built/floors;
+  const side = Math.sqrt(foot*1.22);
+  const depth = foot/Math.max(side,1);
+  const perimeter = 2*(side+depth);
+  const wallArea = perimeter*3.2*floors + built*0.55;
+  const facade = perimeter*3.45*floors;
+  const landSide = Math.sqrt(land*1.15);
+  const r = readRooms();
+  const level = $('finishingLevel').value;
+  const typeRate = BUILDING_TYPES[$('buildingType').value].rate;
+  const hasB = $('hasBasement').checked;
+  return {
+    built, land, floors, foot, perimeter, wallArea, facade,
+    landPerimeter: 2*(landSide + land/landSide) - 5,
+    yard: Math.max(20, land - foot),
+    baths: Math.max(1, r.bathrooms), kitchens: Math.max(1, r.kitchens),
+    doors: APP.rooms.reduce((s,x)=> s + (['bath','bedroom','majlis','kitchen','store','office'].indexOf(x.type)>=0 ? x.count : 0), 0) + 2,
+    openings: Math.round(perimeter*floors*0.35),
+    parking: Math.max(0, Math.round(num('parkCount',2))),
+    hasB, bArea: hasB?Math.max(20,num('basementArea',200)):0, bDepth: hasB?num('basementDepth',3):0,
+    bPerimeter: hasB ? 4*Math.sqrt(Math.max(20,num('basementArea',200))) : 0,
+    finishFactor: level==='standard'?0.78:(level==='luxury'?1.45:1),
+    typeRate
+  };
+}
+
+const FINISH_GROUPS = ['g6','g7','g8','g9'];
+
+function computeBOQ(){
+  const c = costContext();
+  const groups = [];
+  let total = 0;
+  BOQ.forEach(g=>{
+    if(g.only==='basement' && !c.hasB) return;
+    const rows = g.items.map(it=>{
+      const key = g.id+'.'+it.id;
+      const ov = APP.boq[key] || {};
+      let q = ov.q !== undefined ? ov.q : Math.max(0, it.q(c));
+      let p = ov.p !== undefined ? ov.p : it.p(c);
+      if(ov.p === undefined){
+        p *= c.typeRate;
+        if(FINISH_GROUPS.indexOf(g.id)>=0) p *= c.finishFactor;
+      }
+      const t = q*p;
+      total += t;
+      return { key, n:it.n, u:it.u, q:+q.toFixed(2), p:Math.round(p), t, manual: (ov.p !== undefined || ov.q !== undefined) };
+    });
+    groups.push({ id:g.id, name:g.name, color:g.color, rows, sum: rows.reduce((s,r)=>s+r.t,0) });
+  });
+  return { c, groups, total };
+}
+
+function clearBOQ(key){ delete APP.boq[key]; recalcAll(); }
+function editBOQ(key, field, val){
+  const v = parseFloat(val);
+  if(isNaN(v)) return;
+  APP.boq[key] = APP.boq[key] || {};
+  APP.boq[key][field] = Math.max(0, v);
+  recalcAll();
+}
+
+function renderBOQ(res){
+  $('boqBody').innerHTML = res.groups.map(g=>
+    '<div class="bg-slate-950/60 rounded-2xl border border-slate-800 overflow-hidden print-card">'
+    + '<div class="flex justify-between px-3 py-2 bg-slate-900/70 border-b border-slate-800 print-card">'
+      + '<span class="font-extrabold '+g.color+' print-text">'+g.name+'</span>'
+      + '<span class="font-black text-slate-200 print-text">'+rs(g.sum)+'</span></div>'
+    + '<table class="w-full grid text-[11px]"><thead><tr class="text-slate-500">'
+      + '<th class="text-right">البند</th><th>الوحدة</th><th>الكمية</th><th>سعر الوحدة</th><th class="text-left">الإجمالي</th></tr></thead><tbody>'
+    + g.rows.map(r=>
+        '<tr><td class="text-slate-300 print-text">'+r.n+'</td>'
+        + '<td class="text-center text-slate-500 print-text">'+r.u+'</td>'
+        + '<td class="text-center"><input type="number" step="0.01" value="'+r.q+'" onchange="editBOQ(\''+r.key+'\',\'q\',this.value)" class="inp text-center w-20 mx-auto"></td>'
+        + '<td class="text-center"><div class="flex items-center justify-center gap-1">'
+          + '<input type="number" value="'+r.p+'" onchange="editBOQ(\''+r.key+'\',\'p\',this.value)" class="inp text-center w-24">'
+          + (r.manual ? '<button onclick="clearBOQ(\''+r.key+'\')" title="معدّل يدويًا — اضغط للعودة للسعر التلقائي" class="text-amber-400 text-[13px]">✎</button>' : '')
+        + '</div></td>'
+        + '<td class="text-left font-bold text-emerald-400 print-text">'+rs(r.t)+'</td></tr>').join('')
+    + '</tbody></table></div>').join('');
+  $('boqTotal').innerText = 'الإجمالي: ' + rs(res.total);
+}
+
+/* ========================= الأسعار ========================= */
+function editPrice(k, field, v){
+  if(field==='v'){ const n=parseFloat(v); if(!isNaN(n)) APP.prices[k].v = Math.max(0,n); }
+  else APP.prices[k].src = v;
+  recalcAll();
+}
+function renderPrices(){
+  $('pricesTable').innerHTML = '<thead><tr class="text-slate-500 text-[10px]">'
+    + '<th class="text-right">المادة</th><th>الوحدة</th><th>السعر (ر.س)</th><th class="text-right">المورد / المصدر</th></tr></thead><tbody>'
+    + Object.keys(APP.prices).map(k=>{
+        const p = APP.prices[k];
+        return '<tr><td class="text-slate-300">'+p.label+'</td>'
+        + '<td class="text-center text-slate-500">'+p.unit+'</td>'
+        + '<td class="text-center"><input type="number" step="0.1" value="'+p.v+'" onchange="editPrice(\''+k+'\',\'v\',this.value)" class="inp text-center w-24 mx-auto"></td>'
+        + '<td><input value="'+esc(p.src)+'" placeholder="اسم المورد أو رابط العرض" onchange="editPrice(\''+k+'\',\'src\',this.value)" class="inp"></td></tr>';
+      }).join('') + '</tbody>';
+}
+
+/* ========================= الجدول الزمني ========================= */
+function timelinePhases(){
+  const c = costContext();
+  const f = Math.max(0.7, Math.min(2.4, c.built/300));
+  const ph = [
+    { n:'المخططات والتراخيص', m:1.0, d:'اختيار المكتب الهندسي، إعداد المخططات المعمارية والإنشائية، رفعها على بلدي، الفحص الفني، ثم إصدار الرخصة.' },
+    { n:'تجهيز الموقع والحفر', m:0.35*f, d:'تسوير الموقع، توصيل كهرباء وماء مؤقت، تحديد الأركان، الحفر ونقل ناتجه.' }
+  ];
+  if(c.hasB) ph.push({ n:'أعمال القبو', m:0.9*f, d:'حفر عميق، جدران ساندة، عزل بيتومين، أرضية القبو ومضخة الصرف.' });
+  ph.push(
+    { n:'القواعد والميد', m:0.6*f, d:'خرسانة النظافة، تسليح وصب القواعد، رقاب الأعمدة، الميد الرابط، ثم الردم والدك.' },
+    { n:'الأعمدة والأسقف', m:0.55*f*c.floors, d:'تسليح وصب أعمدة كل دور، تركيب الشدة، صب السقف، المعالجة بالماء 7 أيام قبل فك الشدة.' },
+    { n:'المباني بالبلوك', m:0.5*f*c.floors, d:'بناء الجدران الخارجية والقواطع الداخلية مع ترك فتحات الأبواب والنوافذ وتركيب الأعتاب.' },
+    { n:'التمديدات الكهربائية والصحية', m:0.8*f, d:'تكسير ومد مواسير الكهرباء وعلب المفاتيح، تمديد تغذية وصرف السباكة، ثم اختبار الضغط قبل التغطية.' },
+    { n:'اللياسة والعزل', m:0.9*f, d:'بؤج وأوتار، لياسة داخلية وخارجية، عزل الأسطح والحمامات، واختبار التغريق 48 ساعة.' },
+    { n:'الأرضيات والسيراميك', m:0.9*f, d:'تركيب البورسلان والسيراميك، رخام الدرج والعتبات، الوزرات، ثم الترويب والتنظيف.' },
+    { n:'الأبواب والنوافذ والألمنيوم', m:0.6*f, d:'تركيب النوافذ والزجاج، الأبواب الداخلية والباب الرئيسي، أعمال الحديد والدرابزين والمظلات.' },
+    { n:'الدهانات والجبس', m:0.8*f, d:'معجون وسنفرة، جبس بورد والإضاءة المخفية، وجهين دهان داخلي، ودهان الواجهات.' },
+    { n:'الأعمال الخارجية', m:0.6*f, d:'السور والبوابات، تبليط الفناء، مظلة المواقف، الخزانات وربط الصرف والتشجير.' },
+    { n:'التسليم وشهادة الإشغال', m:0.4, d:'تشغيل تجريبي للكهرباء والسباكة، معالجة الملاحظات، ثم طلب شهادة إتمام البناء وتوصيل الخدمات الدائمة.' }
+  );
+  return ph;
+}
+
+function renderTimeline(){
+  const ph = timelinePhases();
+  const totalM = ph.reduce((s,p)=>s+p.m,0);
+  $('sumMonths').innerText = Math.ceil(totalM) + ' شهر';
+
+  const start = $('startDate').value ? new Date($('startDate').value) : null;
+  const monthName = i => {
+    if(!start) return 'الشهر ' + (i+1);
+    const d = new Date(start.getFullYear(), start.getMonth()+i, 1);
+    return 'الشهر ' + (i+1) + ' — ' + d.toLocaleDateString('ar-SA', { month:'long', year:'numeric' });
+  };
+
+  const months = [];
+  let cursor = 0;
+  ph.forEach(p=>{
+    const from = cursor, to = cursor + p.m;
+    for(let m = Math.floor(from); m < Math.ceil(to); m++){
+      months[m] = months[m] || [];
+      const share = (Math.min(to, m+1) - Math.max(from, m)) / p.m;
+      months[m].push({ p, share });
+    }
+    cursor = to;
+  });
+
+  $('timelineBody').innerHTML = months.map((list,i)=>
+    '<div class="bg-slate-950/60 rounded-2xl border border-slate-800 overflow-hidden print-card">'
+    + '<div class="px-3 py-2 bg-slate-900/70 border-b border-slate-800 font-extrabold text-emerald-400 print-text">'+monthName(i)+'</div>'
+    + '<div class="p-3 space-y-2">'
+    + list.map(x=>
+        '<div class="text-[11px]"><div class="flex justify-between gap-2">'
+        + '<span class="font-bold text-slate-200 print-text">'+x.p.n+'</span>'
+        + '<span class="text-slate-500 print-text">'+Math.round(x.share*100)+'% من المرحلة</span></div>'
+        + '<p class="text-slate-400 leading-relaxed print-text">'+x.p.d+'</p></div>').join('')
+    + '</div></div>').join('');
+
+  $('phaseSummary').innerHTML = ph.map(p=>
+    '<div class="bg-slate-950 border border-slate-800 rounded-xl p-3 print-card">'
+    + '<span class="font-bold text-slate-200 block print-text">'+p.n+'</span>'
+    + '<span class="text-emerald-400 font-black print-text">'+(p.m<1 ? Math.round(p.m*30)+' يوم' : p.m.toFixed(1)+' شهر')+'</span></div>').join('');
+}
+
+/* ========================= الاشتراطات ========================= */
+const PERMIT_STEPS = [
+  ['تفويض مكتب هندسي مصمم','من حساب المالك في منصة بلدي، مع صك الأرض وهوية المالك.'],
+  ['إعداد المخططات','المكتب يقبل التفويض، يختار تقرير المساحة للأرض، ويعد المخططات المعمارية والإنشائية والكهروميكانيكية.'],
+  ['الفحص الفني والتأمين','يُحال الطلب لشركة التأمين ثم لشركة الفحص الفني للتحقق من مطابقة كود البناء السعودي.'],
+  ['مراجعة الأمانة','مراجعة موظف الأمانة، وإعادة الطلب للمكتب لتعديل الملاحظات إن وجدت.'],
+  ['سداد الرسوم وإصدار الرخصة','بعد الاعتماد تصدر رخصة البناء إلكترونيًا دون مراجعة الفرع.'],
+  ['تسجيل المقاول وبدء التنفيذ','ربط المقاول بالرخصة، ورخصة تجهيز الموقع عند الحاجة، مع الالتزام باشتراطات السلامة.'],
+  ['شهادة إتمام البناء (الإشغال)','تُطلب بعد انتهاء التنفيذ، وهي شرط لتوصيل الخدمات الدائمة وإفراغ الوحدات.']
+];
+
+const BASEMENT_REQS = [
+  'اعتماد القبو في مخطط الرخصة قبل الحفر — الحفر بدون رخصة مخالفة.',
+  'دراسة تربة وجدران ساندة مصممة إنشائيًا لضغط التربة والمياه.',
+  'عزل مائي كامل للأرضية والجدران مع مضخة صرف ونظام تصريف.',
+  'تهوية طبيعية أو ميكانيكية ومنور بمساحة كافية.',
+  'مخرج طوارئ ثانٍ ودرج مطابق إذا استُخدم القبو لغير التخزين.',
+  'الاتفاق مع الجيران وتأمين حدود الحفر لمنع انهيار الأتربة.',
+  'مواقف السيارات داخل حدود الأرض ولا تُحتسب على الشارع.',
+  'منحدر مدخل القبو بميل نظامي ومصرف مياه أمطار عند بدايته.'
+];
+
+function districtOptions(){
+  $('district').innerHTML = APP.districts.map(d=>'<option'+(d===APP.cityDistrict?' selected':'')+'>'+esc(d)+'</option>').join('');
+}
+function addDistrict(){
+  const n = prompt('اسم الحي:');
+  if(n && n.trim()){ APP.districts.splice(APP.districts.length-1,0,n.trim()); APP.cityDistrict = n.trim(); districtOptions(); renderRegs(); }
+}
+
+function renderRegs(){
+  APP.cityDistrict = $('district').value || APP.cityDistrict;
+  const c = costContext();
+  const type = $('buildingType').value;
+
+  $('govLinks').innerHTML = GOV_LINKS.map(l=>
+    '<div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5">'
+    + '<a class="gov font-bold" href="'+l.u+'" target="_blank" rel="noopener">'+l.t+'</a>'
+    + '<p class="text-slate-500 text-[10px] mt-0.5">'+l.d+'</p></div>').join('');
+
+  const cov = (c.foot / c.land) * 100;
+  const allowedCov = num('regCoverage',60);
+  const allowedFloors = num('regFloors',2);
+  const checks = [
+    { ok: cov <= allowedCov, t:'نسبة البناء: '+cov.toFixed(0)+'% مقابل '+allowedCov+'% مسموحة',
+      m: cov<=allowedCov ? 'مطابق' : 'تجاوز بمقدار '+(cov-allowedCov).toFixed(0)+'% — قلّل مسطح الدور الأرضي أو وزّعه على أدوار.' },
+    { ok: c.floors <= allowedFloors, t:'عدد الأدوار: '+c.floors+' مقابل '+allowedFloors+' مسموح',
+      m: c.floors<=allowedFloors ? 'مطابق' : 'يتجاوز المسموح في الحي.' },
+    { ok: c.parking >= 1, t:'مواقف السيارات: '+c.parking+' موقف',
+      m: c.parking>=1 ? 'داخل حدود الأرض' : 'لا توجد مواقف — أضف موقفًا واحدًا على الأقل.' },
+    { ok: num('regFront',0)>=0 && num('regBack',2)>=0, t:'الارتدادات: أمامي '+num('regFront',0)+' م / خلفي '+num('regBack',2)+' م',
+      m:'تُؤخذ من كروكي الأرض ورخصة البناء.' }
+  ];
+  $('regCheckList').innerHTML = checks.map(x=>
+    '<div class="p-2.5 rounded-xl border '+(x.ok?'bg-emerald-500/10 border-emerald-500/30 text-emerald-300':'bg-amber-500/10 border-amber-500/30 text-amber-300')+' print-card">'
+    + '<span class="font-bold print-text">'+(x.ok?'✅ ':'⚠️ ')+x.t+'</span>'
+    + '<p class="text-[10px] opacity-90 print-text">'+x.m+'</p></div>').join('');
+
+  $('typeReqs').innerHTML =
+    '<div class="text-[11px] text-slate-400 mb-1 print-text">نوع المبنى: <strong class="text-emerald-400">'+BUILDING_TYPES[type].label
+    + '</strong> — احتساب المواقف يكون عادة لكل ' + BUILDING_TYPES[type].parkPer + '.</div>'
+    + TYPE_REQS[type].map(r=>'<div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-300 print-card print-text">• '+r+'</div>').join('')
+    + '<p class="text-[10px] text-amber-300/90 bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 mt-2 print-text">'
+    + 'هذه قائمة تحقق إرشادية وليست نص اللائحة. الأرقام النظامية (نسب البناء، عدد المواقف، الارتفاعات) تُؤخذ من '
+    + '<a class="gov" href="https://www.momra.gov.sa/Regulations" target="_blank" rel="noopener">الأنظمة واللوائح</a> و'
+    + '<a class="gov" href="https://sbc.gov.sa" target="_blank" rel="noopener">كود البناء السعودي</a> ومن أمانة منطقة الحدود الشمالية لكل حي على حدة.</p>';
+
+  $('permitSteps').innerHTML = PERMIT_STEPS.map((s,i)=>
+    '<div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5 print-card">'
+    + '<span class="font-bold text-emerald-400 print-text">'+(i+1)+'. '+s[0]+'</span>'
+    + '<p class="text-slate-400 text-[10px] mt-0.5 print-text">'+s[1]+'</p></div>').join('')
+    + '<a class="gov text-[11px] inline-block mt-1" href="https://balady.gov.sa/ar/all-services" target="_blank" rel="noopener">فتح خدمات منصة بلدي ←</a>';
+
+  $('basementReqs').innerHTML = BASEMENT_REQS.map(r=>
+    '<div class="bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-300 print-card print-text">• '+r+'</div>').join('');
+}
+
+/* ========================= الشركات والمقاولون ========================= */
+function editCell(arr, i, k, v){ APP[arr][i][k] = v; }
+function addCompany(){ APP.companies.push({name:'',activity:'',phone:'',price:'',link:''}); renderParties(); }
+function addContractor(){ APP.contractors.push({name:'',trade:'',unit:'',price:'',phone:'',reg:'sca'}); renderParties(); }
+function delRow(arr,i){ APP[arr].splice(i,1); renderParties(); }
+
+const REG_TARGET = {
+  sca:{ t:'هيئة المقاولين', u:'https://muqawil.org/ar/registrationprocess' },
+  ajeer:{ t:'أجير', u:'https://ajeer.qiwa.sa/landing/' },
+  balady:{ t:'بلدي', u:'https://balady.gov.sa/ar/all-services' }
+};
+
+function renderParties(){
+  $('companiesTable').innerHTML = '<thead><tr class="text-slate-500 text-[10px]">'
+    + '<th class="text-right">الشركة</th><th>النشاط</th><th>الهاتف</th><th>السعر/العرض</th><th>الرابط</th><th></th></tr></thead><tbody>'
+    + APP.companies.map((x,i)=>'<tr>'
+      + '<td><input value="'+esc(x.name)+'" placeholder="اسم الشركة" onchange="editCell(\'companies\','+i+',\'name\',this.value)" class="inp"></td>'
+      + '<td><input value="'+esc(x.activity)+'" onchange="editCell(\'companies\','+i+',\'activity\',this.value)" class="inp"></td>'
+      + '<td><input value="'+esc(x.phone)+'" onchange="editCell(\'companies\','+i+',\'phone\',this.value)" class="inp"></td>'
+      + '<td><input value="'+esc(x.price)+'" placeholder="ر.س" onchange="editCell(\'companies\','+i+',\'price\',this.value)" class="inp"></td>'
+      + '<td><input value="'+esc(x.link)+'" placeholder="https://" onchange="editCell(\'companies\','+i+',\'link\',this.value)" class="inp"></td>'
+      + '<td><button onclick="delRow(\'companies\','+i+')" class="text-red-400 font-black px-1">×</button></td></tr>').join('')
+    + '</tbody>';
+
+  $('contractorsTable').innerHTML = '<thead><tr class="text-slate-500 text-[10px]">'
+    + '<th class="text-right">الاسم</th><th>التخصص</th><th>الوحدة</th><th>السعر</th><th>الهاتف</th><th>جهة التسجيل</th><th></th></tr></thead><tbody>'
+    + APP.contractors.map((x,i)=>'<tr>'
+      + '<td><input value="'+esc(x.name)+'" placeholder="اسم المقاول" onchange="editCell(\'contractors\','+i+',\'name\',this.value)" class="inp"></td>'
+      + '<td><input value="'+esc(x.trade)+'" onchange="editCell(\'contractors\','+i+',\'trade\',this.value)" class="inp"></td>'
+      + '<td><input value="'+esc(x.unit)+'" onchange="editCell(\'contractors\','+i+',\'unit\',this.value)" class="inp"></td>'
+      + '<td><input value="'+esc(x.price)+'" placeholder="ر.س" onchange="editCell(\'contractors\','+i+',\'price\',this.value)" class="inp"></td>'
+      + '<td><input value="'+esc(x.phone)+'" onchange="editCell(\'contractors\','+i+',\'phone\',this.value)" class="inp"></td>'
+      + '<td class="text-center"><a class="gov" href="'+REG_TARGET[x.reg||'sca'].u+'" target="_blank" rel="noopener">'+REG_TARGET[x.reg||'sca'].t+'</a></td>'
+      + '<td><button onclick="delRow(\'contractors\','+i+')" class="text-red-400 font-black px-1">×</button></td></tr>').join('')
+    + '</tbody>';
+
+  $('registryLinks').innerHTML = REGISTRY_LINKS.map(l=>
+    '<div class="bg-slate-950 border border-slate-800 rounded-xl p-3">'
+    + '<a class="gov font-bold" href="'+l.u+'" target="_blank" rel="noopener">'+l.t+'</a>'
+    + '<p class="text-slate-500 text-[10px] mt-1">'+l.d+'</p></div>').join('');
+}
+
+/* ========================= النصائح والرسوم ========================= */
+let myChart = null;
+function updateChart(res){
+  const el = $('budgetChart'); if(!el) return;
+  const ctx = el.getContext('2d');
+  if(myChart) myChart.destroy();
+  myChart = new Chart(ctx, {
+    type:'doughnut',
+    data:{ labels: res.groups.map(g=>g.name),
+      datasets:[{ data: res.groups.map(g=>Math.round(g.sum)), borderWidth:0,
+        backgroundColor:['#f59e0b','#3b82f6','#2563eb','#10b981','#14b8a6','#22c55e','#84cc16','#eab308','#a855f7','#f97316','#8b5cf6'] }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } } }
+  });
+}
+
+function renderPayments(total){
+  const plan = [['القواعد والتأسيس',0.15],['الأعمدة والأسقف',0.25],['إتمام المباني وتكفيل العظم',0.15],
+                ['الكهرباء والسباكة واللياسة',0.25],['التسليم النهائي',0.20]];
+  $('paymentPlan').innerHTML = plan.map((p,i)=>
+    '<div class="flex justify-between p-2.5 bg-slate-950 rounded-xl border border-slate-800 print-card">'
+    + '<span class="print-text">دفعة '+(i+1)+': '+p[0]+' ('+(p[1]*100)+'%)</span>'
+    + '<strong class="text-slate-200 print-text">'+rs(total*p[1])+'</strong></div>').join('');
+}
+
+function renderAdvice(res){
+  const c = res.c, list = [];
+  const cov = (c.foot/c.land)*100, allowed = num('regCoverage',60);
+  if(cov > allowed) list.push(['warn','نسبة البناء '+cov.toFixed(0)+'% تتجاوز '+allowed+'% المدخلة كحد مسموح — راجع كروكي الأرض قبل اعتماد المخطط.']);
+  else if(cov < 25) list.push(['info','نسبة البناء '+cov.toFixed(0)+'% فقط — فناء واسع يصلح لملحق أو حديقة.']);
+  if(c.built < roomsNetArea()*1.1) list.push(['warn','مسطح البناء قريب جدًا من صافي مساحات الغرف — لن تكفي المساحة للجدران والممرات.']);
+  if(c.parking === 0) list.push(['warn','لم تُحدد أي مواقف — معظم أنواع المباني تشترط مواقف داخل حدود الأرض.']);
+  if(c.hasB && c.bArea > c.foot) list.push(['warn','مساحة القبو أكبر من مسطح الدور الأرضي — يتطلب مراجعة الارتدادات وتصميم الجدران الساندة.']);
+  const budget = num('userBudget',0);
+  if(budget > 0){
+    const gap = res.total - budget;
+    if(gap > 0) list.push(['warn','عجز '+rs(gap)+' — يمكن تقليل المسطح بنحو '+Math.round(gap/(res.total/Math.max(c.built,1)))+' م² أو خفض مستوى التشطيب.']);
+    else list.push(['good','الميزانية تغطي التكلفة بفارق أمان '+rs(-gap)+'.']);
+  }
+  if(!list.length) list.push(['good','المدخلات متوازنة — أدخل الميزانية وعرض المقاول لتحليل أدق.']);
+  const st = { warn:'bg-amber-500/10 text-amber-300 border-amber-500/30', info:'bg-blue-500/10 text-blue-300 border-blue-500/30', good:'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' };
+  const ic = { warn:'⚠️', info:'ℹ️', good:'✅' };
+  $('smartAdviceList').innerHTML = list.map(a=>'<div class="p-2.5 rounded-xl border '+st[a[0]]+' print-card"><span class="print-text">'+ic[a[0]]+' '+a[1]+'</span></div>').join('');
+}
+
+function renderQuote(total){
+  const q = parseFloat($('contractorQuote').value), d = $('quoteResult');
+  if(!q || !total){ d.className='hidden p-2.5 rounded-xl font-bold border'; }
+  else {
+    const diff = ((q-total)/total)*100;
+    d.className = 'p-2.5 rounded-xl font-bold border';
+    if(Math.abs(diff)<=8){ d.classList.add('bg-emerald-500/10','text-emerald-400','border-emerald-500/30');
+      d.innerHTML = '✅ عرض مقارب للتقدير (الفارق '+diff.toFixed(1)+'%)'; }
+    else if(diff>8){ d.classList.add('bg-red-500/10','text-red-400','border-red-500/30');
+      d.innerHTML = '⚠️ أعلى من التقدير بـ '+diff.toFixed(1)+'% — اطلب تفصيل البنود.'; }
+    else { d.classList.add('bg-amber-500/10','text-amber-400','border-amber-500/30');
+      d.innerHTML = '⚠️ أقل من التقدير بـ '+Math.abs(diff).toFixed(1)+'% — تحقق من المواصفات والكميات.'; }
+  }
+  const b = parseFloat($('userBudget').value), a = $('budgetAdvice');
+  if(!b){ a.className='hidden p-2.5 rounded-xl font-bold border'; return; }
+  a.className = 'p-2.5 rounded-xl font-bold border';
+  if(b >= total){ a.classList.add('bg-emerald-500/10','text-emerald-400','border-emerald-500/30');
+    a.innerHTML = '🎉 الميزانية تغطي المشروع بالكامل.'; }
+  else { a.classList.add('bg-amber-500/10','text-amber-400','border-amber-500/30');
+    a.innerHTML = '💡 عجز بمقدار '+rs(total-b)+'.'; }
+}
+
+/* ========================= التحديث الشامل ========================= */
+let lastRoomsSig = '';
+function recalcAll(){
+  $('basementBox').classList.toggle('hidden', !$('hasBasement').checked);
+
+  const sig = num('modelFloors',2)+'|'+$('hasBasement').checked+'|'+APP.rooms.length;
+  if(sig !== lastRoomsSig){ lastRoomsSig = sig; renderRooms(); }
+
+  const built = builtAreaCalc();
+  $('builtArea').value = built;
+  $('builtAreaOut').innerText = built.toLocaleString('ar-SA') + ' م²';
+  $('sumBuilt').innerText = built.toLocaleString('ar-SA') + ' م²';
+  $('roomsSum').innerText = Math.round(roomsNetArea()).toLocaleString('ar-SA') + ' م²';
+
+  const res = computeBOQ();
+  const c = res.c;
+  $('coverageRatio').innerText = Math.round((c.foot/c.land)*100) + '%';
+  $('grandTotal').innerText = rs(res.total);
+  $('avgPerMeter').innerText = Math.round(res.total/Math.max(built,1)).toLocaleString('ar-SA') + ' ر.س/م²';
+
+  renderBOQ(res);
+  updateChart(res);
+  renderPayments(res.total);
+  renderAdvice(res);
+  renderQuote(res.total);
+  renderRegs();
+  renderTimeline();
+
+  if(typeof scheduleModelUpdate === 'function') scheduleModelUpdate();
+  if(typeof renderRoomSchedule === 'function') renderRoomSchedule();
+
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveState, 700);
+}
+let saveTimer = null;
+
+function resetData(){ resetDefaults(); }
+
+window.addEventListener('load', function(){
+  const hid = document.createElement('input');
+  hid.type='hidden'; hid.id='builtArea'; hid.value='500'; document.body.appendChild(hid);
+  $('buildingType').innerHTML = Object.keys(BUILDING_TYPES).map(k=>'<option value="'+k+'">'+BUILDING_TYPES[k].label+'</option>').join('');
+  districtOptions();
+  const restored = loadState();
+  if(restored){ districtOptions(); }
+  renderRooms();
+  renderPrices();
+  renderParties();
+  const today = new Date().toISOString().slice(0,10);
+  if(!$('priceDate').value) $('priceDate').value = today;
+  if(!$('startDate').value) $('startDate').value = today;
+  if(restored) $('saveHint').textContent = 'تم استرجاع مشروعك السابق';
+  recalcAll();
+  try {
+    init3D();
+    if(typeof V !== 'undefined'){
+      document.querySelectorAll('.style-btn').forEach(b=> b.classList.toggle('active', b.dataset.style === V.style));
+      const os = document.querySelector('[oninput^="setOrient"]');
+      if(os){ os.value = V.orient; setOrient(V.orient); }
+    }
+  } catch(e){ console.error(e); $('overlayDesc').innerText = 'تعذّر تشغيل العرض ثلاثي الأبعاد على هذا المتصفح.'; }
+});
+
+
+/* =========================================================
+   الحفظ والاستيراد والتصدير
+   ========================================================= */
+const STORE_KEY = 'arar_buildings_v10';
+const FIELD_IDS = ['landArea','modelFloors','raiseH','parkCount','hasBasement','basementArea','basementDepth',
+  'finishingLevel','buildingType','district','regCoverage','regFloors','regFront','regBack',
+  'contractorQuote','userBudget','priceDate','startDate'];
+
+function collectState(){
+  const f = {};
+  FIELD_IDS.forEach(id=>{ const e=$(id); if(e) f[id] = (e.type==='checkbox') ? e.checked : e.value; });
+  return { v:10, fields:f, rooms:APP.rooms, prices:APP.prices, boq:APP.boq,
+           companies:APP.companies, contractors:APP.contractors, districts:APP.districts,
+           view: (typeof V!=='undefined') ? { style:V.style, orient:V.orient } : null };
+}
+function applyState(s){
+  if(!s || !s.fields) return false;
+  Object.keys(s.fields).forEach(id=>{ const e=$(id); if(!e) return;
+    if(e.type==='checkbox') e.checked = !!s.fields[id]; else e.value = s.fields[id]; });
+  if(s.rooms && s.rooms.length) APP.rooms = s.rooms;
+  if(s.prices) Object.keys(s.prices).forEach(k=>{ if(APP.prices[k]) APP.prices[k] = s.prices[k]; });
+  if(s.boq) APP.boq = s.boq;
+  if(s.companies) APP.companies = s.companies;
+  if(s.contractors) APP.contractors = s.contractors;
+  if(s.districts) APP.districts = s.districts;
+  if(s.view && typeof V!=='undefined'){ if(s.view.style) V.style = s.view.style; if(s.view.orient!=null) V.orient = s.view.orient; }
+  return true;
+}
+function saveState(){
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(collectState())); flashSaved(); }
+  catch(e){ /* بيئات تمنع التخزين — نتجاهل بهدوء */ }
+}
+function loadState(){
+  try { const raw = localStorage.getItem(STORE_KEY); if(!raw) return false; return applyState(JSON.parse(raw)); }
+  catch(e){ return false; }
+}
+let savedTimer = null;
+function flashSaved(){
+  const el = $('saveHint'); if(!el) return;
+  el.classList.remove('opacity-0'); clearTimeout(savedTimer);
+  savedTimer = setTimeout(()=> el.classList.add('opacity-0'), 1400);
+}
+function exportJSON(){
+  const blob = new Blob([JSON.stringify(collectState(),null,2)], {type:'application/json'});
+  downloadBlob(blob, 'مشروع-عرعر.json');
+}
+function importJSON(input){
+  const file = input.files && input.files[0]; if(!file) return;
+  const fr = new FileReader();
+  fr.onload = () => { try { applyState(JSON.parse(fr.result)); districtOptions(); renderRooms(); renderPrices(); renderParties(); recalcAll(); if(typeof rebuildModel==='function') rebuildModel(true); }
+    catch(e){ alert('تعذّر قراءة الملف — تأكد أنه ملف مشروع صادر من المنصة.'); } };
+  fr.readAsText(file); input.value='';
+}
+function downloadBlob(blob, name){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+}
+function exportCSV(){
+  const res = computeBOQ();
+  let rows = [['المجموعة','البند','الوحدة','الكمية','سعر الوحدة','الإجمالي']];
+  res.groups.forEach(g=> g.rows.forEach(r=> rows.push([g.name,r.n,r.u,r.q,r.p,Math.round(r.t)])));
+  rows.push(['','','','','الإجمالي',Math.round(res.total)]);
+  const csv = '\uFEFF' + rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  downloadBlob(new Blob([csv],{type:'text/csv;charset=utf-8'}), 'جدول-الكميات-عرعر.csv');
+}
+function resetDefaults(){
+  if(!confirm('إعادة كل المدخلات للقيم الافتراضية؟')) return;
+  try { localStorage.removeItem(STORE_KEY); } catch(e){}
+  location.reload();
+}
+
+/* =========================================================
+   طبقة الذكاء الاصطناعي
+   ========================================================= */
+const AI = {
+  endpoint: (typeof window!=='undefined' && window.AI_ENDPOINT) ? window.AI_ENDPOINT : 'https://api.anthropic.com/v1/messages',
+  model: 'claude-sonnet-4-6',
+  available: true,
+  async call(messages, opts){
+    opts = opts || {};
+    const body = { model: this.model, max_tokens: opts.max || 1400, messages: messages };
+    if(opts.system) body.system = opts.system;
+    if(opts.search) body.tools = [{ type:'web_search_20250305', name:'web_search' }];
+    const r = await fetch(this.endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json();
+    return (d.content||[]).map(b=> b.type==='text' ? b.text : '').filter(Boolean).join('\n').trim();
+  },
+  parseJSON(txt){
+    const clean = txt.replace(/```json|```/g,'').trim();
+    const i = clean.indexOf('{'), j = clean.lastIndexOf('}');
+    return JSON.parse(i>=0 ? clean.slice(i, j+1) : clean);
+  }
+};
+
+function projectBrief(){
+  const res = computeBOQ(), c = res.c;
+  const rooms = APP.rooms.map(r=> r.count+'× '+r.name+' ('+r.area+' م²)').join('، ');
+  return [
+    'مدينة عرعر، حي ' + (APP.cityDistrict||'غير محدد') + '، ' + BUILDING_TYPES[$('buildingType').value].label,
+    'مساحة الأرض ' + c.land + ' م²، مسطح البناء ' + c.built + ' م²، ' + c.floors + ' دور' + (c.hasB ? ' + قبو ' + c.bArea + ' م²' : ''),
+    'مستوى التشطيب: ' + $('finishingLevel').options[$('finishingLevel').selectedIndex].text,
+    'الغرف: ' + rooms,
+    'التكلفة التقديرية الحالية: ' + Math.round(res.total).toLocaleString('ar-SA') + ' ر.س (' + Math.round(res.total/Math.max(c.built,1)) + ' ر.س/م²)',
+    'أسعار المواد المستخدمة في الحساب: ' + Object.keys(APP.prices).map(k=> APP.prices[k].label+' '+APP.prices[k].v+' ر.س/'+APP.prices[k].unit).join('، ')
+  ].join('\n');
+}
+
+/* --- تحديث الأسعار تلقائيًا --- */
+async function aiUpdatePrices(){
+  const btn = $('btnAiPrices'), st = $('aiPriceStatus');
+  btn.disabled = true; btn.classList.add('opacity-50');
+  st.innerHTML = '<span class="text-blue-300">⏳ يبحث عن متوسط أسعار السوق…</span>';
+  const keys = Object.keys(APP.prices);
+  const list = keys.map(k=> k+' = '+APP.prices[k].label+' (بالـ '+APP.prices[k].unit+')').join('\n');
+  try{
+    const txt = await AI.call([{ role:'user', content:
+      'ابحث عن متوسط أسعار مواد البناء الحالية في المملكة العربية السعودية، ويفضّل منطقة الحدود الشمالية/عرعر، لهذه المواد:\n'
+      + list + '\n\nأعد النتيجة كـ JSON فقط بدون أي نص آخر، بالشكل:\n'
+      + '{"asOf":"YYYY-MM-DD","items":{"steel":{"v":0,"src":"اسم المصدر"}, ...},"note":"ملاحظة قصيرة"}\n'
+      + 'v رقم بالريال السعودي للوحدة المذكورة. إن لم تجد سعرًا موثوقًا لمادة، اتركها خارج items.' }],
+      { search:true, max:2000, system:'أنت مساعد تسعير لمواد البناء في السعودية. ترد بـ JSON صالح فقط. الأسعار متوسطات سوقية تقريبية.' });
+    const data = AI.parseJSON(txt);
+    let n = 0;
+    Object.keys(data.items||{}).forEach(k=>{
+      if(APP.prices[k] && +data.items[k].v > 0){
+        APP.prices[k].v = +data.items[k].v;
+        APP.prices[k].src = (data.items[k].src || 'تحديث آلي') + ' — AI';
+        n++;
+      }
+    });
+    if(data.asOf) $('priceDate').value = data.asOf;
+    renderPrices(); recalcAll();
+    st.innerHTML = n ? '<span class="text-emerald-300">✅ حُدِّث '+n+' سعرًا. '+esc(data.note||'')+'</span>'
+                     : '<span class="text-amber-300">لم يُعثر على أسعار موثوقة — أبقِ القيم الحالية.</span>';
+  } catch(e){
+    st.innerHTML = '<span class="text-amber-300">⚠️ تعذّر الاتصال بخدمة الأسعار ('+e.message+'). راجع إعداد الـ AI في README.</span>';
+  }
+  btn.disabled = false; btn.classList.remove('opacity-50');
+}
+
+/* --- مربع الاستشارات --- */
+let chatHistory = [];
+function toggleChat(force){
+  const p = $('chatPanel');
+  const open = force !== undefined ? force : p.classList.contains('hidden');
+  p.classList.toggle('hidden', !open);
+  if(open) setTimeout(()=> $('chatInput').focus(), 80);
+}
+function chatBubble(role, html){
+  const wrap = document.createElement('div');
+  wrap.className = role==='user' ? 'text-left' : 'text-right';
+  wrap.innerHTML = '<div class="inline-block max-w-[92%] rounded-2xl px-3 py-2 text-[12px] leading-relaxed '
+    + (role==='user' ? 'bg-emerald-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-200') + '">' + html + '</div>';
+  $('chatBody').appendChild(wrap);
+  $('chatBody').scrollTop = $('chatBody').scrollHeight;
+  return wrap;
+}
+function mdLite(t){
+  return esc(t).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/(https?:\/\/[^\s<]+)/g,'<a class="gov" href="$1" target="_blank" rel="noopener">$1</a>')
+    .replace(/\n/g,'<br>');
+}
+async function sendChat(preset){
+  const inp = $('chatInput');
+  const q = (preset || inp.value || '').trim();
+  if(!q) return;
+  inp.value = '';
+  chatBubble('user', esc(q));
+  const thinking = chatBubble('bot', '<span class="opacity-70">⏳ يبحث ويحلل…</span>');
+  chatHistory.push({ role:'user', content:q });
+  try{
+    const txt = await AI.call(chatHistory.slice(-8), { search:true, max:1600, system:
+      'أنت مستشار بناء سعودي خبير يخدم أهالي مدينة عرعر في منطقة الحدود الشمالية. '
+      + 'أجب بالعربية بتفصيل عملي وأرقام حين تتوفر، ورتب الإجابة بنقاط قصيرة. '
+      + 'استخدم البحث للأسعار والأنظمة الحديثة، واذكر رابط المصدر الرسمي حين يكون متاحًا. '
+      + 'إن كان السؤال يتطلب مهندسًا معتمدًا أو قرارًا نظاميًا، قل ذلك صراحة. لا تخترع أرقامًا أو أنظمة.\n\n'
+      + 'بيانات مشروع المستخدم الحالية:\n' + projectBrief() });
+    thinking.innerHTML = '<div class="inline-block max-w-[92%] rounded-2xl px-3 py-2 text-[12px] leading-relaxed bg-slate-800 text-slate-200">' + mdLite(txt) + '</div>';
+    chatHistory.push({ role:'assistant', content:txt });
+  } catch(e){
+    thinking.innerHTML = '<div class="inline-block max-w-[92%] rounded-2xl px-3 py-2 text-[12px] bg-amber-500/15 text-amber-300">تعذّر الوصول لخدمة الاستشارات ('+e.message+'). إن كنت تشغّل الموقع على استضافتك فراجع إعداد وسيط الـ AI في ملف README.</div>';
+  }
+}
+function chatKey(e){ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendChat(); } }
+
+</script>
+<script>
+/* منصة مباني عرعر — محرك العرض ثلاثي الأبعاد (Three.js r128) */
+/* =========================================================
+       محرك العرض المعماري — يبني الفيلا والموقع بالكامل بشكل
+       بارامتري من مدخلات المستخدم (المساحة، الأدوار، الغرف).
+       ========================================================= */
+
+    let scene, camera, renderer, world, sun, hemi, ambient;
+    let MAT = {}, matPool = [], geoPool = [];
+    let curParams = null, lastSignature = '', rebuildTimer = null, animHandle = null;
+
+    const V = { mode: 'exterior', style: 'modern', phase: 'finishing', night: false, autoRotate: true, floor: 0, furniture: true,
+                orient: 180, sunStudy: false, hour: 15, month: 6, cut: 0, walk: false, dims: false };
+    const ARAR = { lat: 30.975, lon: 41.023 };
+    const WALK = { pos: new THREE.Vector3(0, 1.65, 0), yaw: Math.PI, pitch: 0, keys: {}, push: 0 };
+    let clipPlane = null, northArrow = null, dimGroup = null;
+    const CAM = { az: 0.85, pol: 1.13, dist: 46, target: new THREE.Vector3(0, 3, 0) };
+    let dragging = false, lastPointer = { x: 0, y: 0 }, pinchStart = 0, pinchDist0 = 0;
+
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+    /* ---------- أدوات إنشاء ---------- */
+    function M(color, o) {
+        const m = new THREE.MeshStandardMaterial(Object.assign({ color: color, roughness: 0.92, metalness: 0 }, o || {}));
+        matPool.push(m); return m;
+    }
+    function track(geo) { geoPool.push(geo); return geo; }
+    function addBox(p, w, h, d, m, x, y, z, ry) {
+        const me = new THREE.Mesh(track(new THREE.BoxGeometry(Math.max(w, 0.02), Math.max(h, 0.02), Math.max(d, 0.02))), m);
+        me.position.set(x, y, z); if (ry) me.rotation.y = ry;
+        me.castShadow = true; me.receiveShadow = true; p.add(me); return me;
+    }
+    function addCyl(p, rTop, rBot, h, seg, m, x, y, z) {
+        const me = new THREE.Mesh(track(new THREE.CylinderGeometry(rTop, rBot, h, seg || 16)), m);
+        me.position.set(x, y, z); me.castShadow = true; me.receiveShadow = true; p.add(me); return me;
+    }
+    function addSphere(p, r, m, x, y, z, flat) {
+        const me = new THREE.Mesh(track(new THREE.SphereGeometry(r, flat ? 6 : 14, flat ? 5 : 12)), m);
+        me.position.set(x, y, z); me.castShadow = true; me.receiveShadow = true; p.add(me); return me;
+    }
+
+    /* ---------- الخامات حسب الطراز ---------- */
+    function buildMaterials() {
+        const palette = {
+            modern:     { wall: 0xeae6de, wall2: 0xcfc7bb, trim: 0x33383f, accent: 0x23272d, wood: 0xa9764a, stone: 0x8f877a, roof: 0xd8d3ca, glass: 0x8fb9d4 },
+            classic:    { wall: 0xf2e6ca, wall2: 0xdfcb9f, trim: 0xb98442, accent: 0x8a5a2b, wood: 0x7d4d26, stone: 0xd0bb92, roof: 0x8f3f2c, glass: 0xc2dae8 },
+            neoclassic: { wall: 0xe8ebee, wall2: 0xd3d8de, trim: 0xfaf9f6, accent: 0x27354d, wood: 0x6d4b30, stone: 0xbcc2c9, roof: 0xe6eaee, glass: 0xa8c8e0 }
+        }[V.style];
+
+        MAT = {
+            wall: M(palette.wall, { roughness: 0.95 }),
+            wall2: M(palette.wall2, { roughness: 0.95 }),
+            trim: M(palette.trim, { roughness: 0.6 }),
+            accent: M(palette.accent, { roughness: 0.5, metalness: 0.12 }),
+            wood: M(palette.wood, { roughness: 0.72 }),
+            stone: M(palette.stone, { roughness: 1 }),
+            roof: M(palette.roof, { roughness: 0.85 }),
+            ghost: M(palette.wall, { transparent: true, opacity: 0.13, side: THREE.DoubleSide, depthWrite: false }),
+            glass: M(palette.glass, { roughness: 0.06, metalness: 0.4, transparent: true, opacity: 0.5 }),
+            metal: M(0x9aa3ab, { roughness: 0.32, metalness: 0.85 }),
+            darkMetal: M(0x2b3138, { roughness: 0.45, metalness: 0.6 }),
+            concrete: M(0xa3a29c, { roughness: 1 }),
+            concreteDark: M(0x7c7b74, { roughness: 1 }),
+            soil: M(0x6d5a46, { roughness: 1 }),
+            sand: M(0xbfa77f, { roughness: 1 }),
+            asphalt: M(0x3a3f45, { roughness: 1 }),
+            paver: M(0xb6afa2, { roughness: 1 }),
+            paver2: M(0xa39c8f, { roughness: 1 }),
+            grass: M(0x3f7a35, { roughness: 1 }),
+            palmTrunk: M(0x6f4d2c, { roughness: 1 }),
+            frond: M(0x2f7d3a, { roughness: 1 }),
+            shrub: M(0x35682f, { roughness: 1 }),
+            rebar: M(0x8b6a3c, { roughness: 0.55, metalness: 0.5 }),
+            block: M(0xb5b0a4, { roughness: 1 }),
+            marble: M(0xefeae2, { roughness: 0.22 }),
+            tileFloor: M(0xdde3e6, { roughness: 0.3 }),
+            woodFloor: M(0x9c6b45, { roughness: 0.55 }),
+            white: M(0xf5f6f7, { roughness: 0.5 }),
+            fabric: M(0x4d5c6b, { roughness: 1 }),
+            fabric2: M(0x7f8b69, { roughness: 1 }),
+            carpet: M(0x8c6b5a, { roughness: 1 }),
+            lamp: M(0xfff1c9, { emissive: 0x000000 }),
+            water: M(0x2f6f8f, { roughness: 0.08, metalness: 0.3 })
+        };
+    }
+
+    /* ---------- سماء متدرجة ---------- */
+    function makeSky(night) {
+        const c = document.createElement('canvas'); c.width = 8; c.height = 256;
+        const g = c.getContext('2d'); const grd = g.createLinearGradient(0, 0, 0, 256);
+        if (night) { grd.addColorStop(0, '#04070f'); grd.addColorStop(0.55, '#0a1524'); grd.addColorStop(1, '#1b2740'); }
+        else { grd.addColorStop(0, '#7fbbe6'); grd.addColorStop(0.5, '#c7dff0'); grd.addColorStop(1, '#e7ded0'); }
+        g.fillStyle = grd; g.fillRect(0, 0, 8, 256);
+        const tex = new THREE.CanvasTexture(c); tex.magFilter = THREE.LinearFilter; return tex;
+    }
+
+    /* ---------- لوحات أسماء الغرف ---------- */
+    function makeLabel(text, sub) {
+        const H = sub ? 96 : 64;
+        const c = document.createElement('canvas'); c.width = 256; c.height = H;
+        const g = c.getContext('2d');
+        g.fillStyle = 'rgba(2,6,23,0.8)'; g.fillRect(0, 0, 256, H);
+        g.strokeStyle = '#10b981'; g.lineWidth = 4; g.strokeRect(2, 2, 252, H - 4);
+        g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillStyle = '#d1fae5'; g.font = 'bold 30px Cairo, sans-serif';
+        g.fillText(text, 128, sub ? 32 : 34);
+        if (sub) {
+            g.strokeStyle = 'rgba(16,185,129,0.45)'; g.lineWidth = 2;
+            g.beginPath(); g.moveTo(28, 52); g.lineTo(228, 52); g.stroke();
+            g.fillStyle = '#fbbf24'; g.font = 'bold 26px Cairo, sans-serif';
+            g.fillText(sub, 128, 74);
+        }
+        const tex = new THREE.CanvasTexture(c);
+        const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+        spr.scale.set(2.2, 2.2 * H / 256, 1); return spr;
+    }
+
+    /* =========================================================
+       التهيئة والتحكم بالكاميرا
+       ========================================================= */
+    function init3D() {
+        const container = document.getElementById('threeCanvasWrapper');
+        if (!container || typeof THREE === 'undefined') return;
+
+        scene = new THREE.Scene();
+        scene.background = makeSky(false);
+        scene.fog = new THREE.Fog(0xcfe0ee, 90, 260);
+
+        camera = new THREE.PerspectiveCamera(38, container.clientWidth / Math.max(container.clientHeight, 1), 0.3, 800);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
+        renderer.localClippingEnabled = true;
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        if (THREE.sRGBEncoding) renderer.outputEncoding = THREE.sRGBEncoding;
+        if (THREE.ACESFilmicToneMapping) { renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05; }
+        container.appendChild(renderer.domElement);
+
+        hemi = new THREE.HemisphereLight(0xcfe4f5, 0x6b6153, 0.55); scene.add(hemi);
+        ambient = new THREE.AmbientLight(0xffffff, 0.22); scene.add(ambient);
+
+        sun = new THREE.DirectionalLight(0xfff3dd, 2.0);
+        sun.position.set(38, 46, 30);
+        sun.castShadow = true;
+        sun.shadow.mapSize.width = 2048; sun.shadow.mapSize.height = 2048;
+        sun.shadow.bias = -0.0006;
+        scene.add(sun); scene.add(sun.target);
+
+        world = new THREE.Group(); scene.add(world);
+        clipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 999);
+        buildNorthArrow();
+        bindWalkKeys();
+
+        bindPointer(container);
+        window.addEventListener('resize', onViewerResize);
+        if (window.ResizeObserver) new ResizeObserver(onViewerResize).observe(container);
+
+        rebuildModel(true);
+        loop();
+    }
+
+    function bindPointer(el) {
+        el.addEventListener('mousedown', function (e) { dragging = true; lastPointer = { x: e.clientX, y: e.clientY }; el.classList.add('cursor-grabbing'); });
+        window.addEventListener('mousemove', function (e) {
+            if (!dragging) return;
+            orbitBy(e.clientX - lastPointer.x, e.clientY - lastPointer.y);
+            lastPointer = { x: e.clientX, y: e.clientY };
+        });
+        window.addEventListener('mouseup', function () { dragging = false; el.classList.remove('cursor-grabbing'); });
+
+        el.addEventListener('wheel', function (e) { e.preventDefault(); zoomBy(e.deltaY * 0.0016); }, { passive: false });
+
+        el.addEventListener('touchstart', function (e) {
+            if (e.touches.length === 1) { dragging = true; lastPointer = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }
+            else if (e.touches.length === 2) { dragging = false; pinchStart = touchSpread(e); pinchDist0 = CAM.dist; }
+        }, { passive: true });
+
+        el.addEventListener('touchmove', function (e) {
+            if (e.touches.length === 1 && dragging) {
+                e.preventDefault();
+                orbitBy(e.touches[0].clientX - lastPointer.x, e.touches[0].clientY - lastPointer.y);
+                lastPointer = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            } else if (e.touches.length === 2 && pinchStart > 0) {
+                e.preventDefault();
+                CAM.dist = clamp(pinchDist0 * (pinchStart / Math.max(touchSpread(e), 1)), curParams ? curParams.minDist : 6, curParams ? curParams.maxDist : 160);
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchend', function () { dragging = false; pinchStart = 0; });
+    }
+
+    function touchSpread(e) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX, dy = e.touches[0].clientY - e.touches[1].clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+    function orbitBy(dx, dy) {
+        if (V.walk) {
+            WALK.yaw -= dx * 0.005;
+            WALK.pitch = clamp(WALK.pitch - dy * 0.004, -1.1, 1.1);
+            return;
+        }
+        CAM.az -= dx * 0.006;
+        CAM.pol = clamp(CAM.pol - dy * 0.005, 0.16, 1.48);
+    }
+    function zoomBy(f) {
+        const lo = curParams ? curParams.minDist : 6, hi = curParams ? curParams.maxDist : 160;
+        CAM.dist = clamp(CAM.dist * (1 + f), lo, hi);
+    }
+    function applyCamera() {
+        const t = CAM.target, s = Math.sin(CAM.pol);
+        camera.position.set(t.x + CAM.dist * s * Math.sin(CAM.az), t.y + CAM.dist * Math.cos(CAM.pol), t.z + CAM.dist * s * Math.cos(CAM.az));
+        camera.lookAt(t);
+    }
+    function onViewerResize() {
+        const c = document.getElementById('threeCanvasWrapper');
+        if (!c || !renderer || c.clientWidth < 10 || c.clientHeight < 10) return;
+        camera.aspect = c.clientWidth / c.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(c.clientWidth, c.clientHeight);
+    }
+    function loop() {
+        animHandle = requestAnimationFrame(loop);
+        if (V.walk) { stepWalk(); applyWalkCamera(); }
+        else {
+            if (V.autoRotate && !dragging) CAM.az += 0.0016;
+            applyCamera();
+        }
+        if (northArrow) northArrow.lookAt(camera.position.x, northArrow.position.y, camera.position.z);
+        renderer.render(scene, camera);
+    }
+
+    /* ============ اتجاه الأرض وبوصلة الشمال ============ */
+    function applyOrientation() { if (world) world.rotation.y = (180 - V.orient) * Math.PI / 180; }
+
+    function buildNorthArrow() {
+        northArrow = new THREE.Group();
+        const m = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+        const m2 = new THREE.MeshBasicMaterial({ color: 0xe2e8f0 });
+        const cone = new THREE.Mesh(new THREE.ConeGeometry(0.7, 2.0, 4), m);
+        cone.position.z = -1.0; cone.rotation.x = -Math.PI / 2; northArrow.add(cone);
+        const tail = new THREE.Mesh(new THREE.ConeGeometry(0.7, 2.0, 4), m2);
+        tail.position.z = 1.0; tail.rotation.x = Math.PI / 2; northArrow.add(tail);
+        northArrow.position.set(0, 0.4, 0);
+        scene.add(northArrow);
+    }
+
+    /* ============ دراسة الشمس لخط عرض عرعر ============ */
+    function sunAngles(month, hour) {
+        const doy = Math.round((month - 0.5) * 30.42);
+        const decl = 23.45 * Math.sin(2 * Math.PI * (284 + doy) / 365) * Math.PI / 180;
+        const H = (hour - 12) * 15 * Math.PI / 180;
+        const phi = ARAR.lat * Math.PI / 180;
+        const alt = Math.asin(Math.sin(phi) * Math.sin(decl) + Math.cos(phi) * Math.cos(decl) * Math.cos(H));
+        const az = Math.atan2(-Math.sin(H), Math.tan(decl) * Math.cos(phi) - Math.sin(phi) * Math.cos(H));
+        return { alt: alt, az: az };
+    }
+
+    function applySunStudy(P) {
+        const s = sunAngles(V.month, V.hour);
+        const R = Math.max(P.landW, P.landD) * 2.2;
+        const a = Math.max(s.alt, 0.03);
+        sun.position.set(R * Math.cos(a) * Math.sin(s.az), R * Math.sin(a), -R * Math.cos(a) * Math.cos(s.az));
+        sun.target.position.set(0, 0, 0);
+        const up = Math.max(0, Math.sin(s.alt));
+        sun.intensity = s.alt <= 0 ? 0.05 : 0.5 + up * 1.9;
+        sun.color.setHSL(0.09 + up * 0.05, 0.55 - up * 0.3, 0.55 + up * 0.15);
+        hemi.intensity = s.alt <= 0 ? 0.12 : 0.25 + up * 0.4;
+        ambient.intensity = s.alt <= 0 ? 0.08 : 0.18;
+        if (scene.background && scene.background.dispose) scene.background.dispose();
+        scene.background = makeSky(s.alt <= 0.06);
+        const st = document.getElementById('sunReadout');
+        if (st) st.innerText = s.alt <= 0
+            ? 'الشمس تحت الأفق — لا ظل مباشر'
+            : 'ارتفاع الشمس ' + Math.round(s.alt * 180 / Math.PI) + '° · السمت ' + Math.round(((s.az * 180 / Math.PI) + 360) % 360) + '° من الشمال';
+    }
+
+    /* ============ القص الحي للمبنى ============ */
+    function applyCut(P) {
+        if (!renderer) return;
+        if (V.cut <= 0) { renderer.clippingPlanes = []; return; }
+        const top = P.base + P.floors * P.fh + 1.6;
+        const bottom = P.hasBasement ? P.base - P.bDepth : 0;
+        clipPlane.constant = bottom + (top - bottom) * (1 - V.cut);
+        renderer.clippingPlanes = [clipPlane];
+    }
+
+    /* ============ وضع المشي داخل المشروع ============ */
+    function bindWalkKeys() {
+        window.addEventListener('keydown', function (e) { WALK.keys[e.key.toLowerCase()] = true; });
+        window.addEventListener('keyup', function (e) { WALK.keys[e.key.toLowerCase()] = false; });
+    }
+    function stepWalk() {
+        const k = WALK.keys, sp = 0.09;
+        let fwd = (k['w'] || k['arrowup'] ? 1 : 0) - (k['s'] || k['arrowdown'] ? 1 : 0) + WALK.push;
+        let side = (k['d'] || k['arrowright'] ? 1 : 0) - (k['a'] || k['arrowleft'] ? 1 : 0);
+        if (k['shift']) { fwd *= 2.2; side *= 2.2; }
+        WALK.pos.x += (Math.sin(WALK.yaw) * fwd + Math.cos(WALK.yaw) * side) * sp;
+        WALK.pos.z += (Math.cos(WALK.yaw) * fwd - Math.sin(WALK.yaw) * side) * sp;
+        const P = curParams;
+        if (P) {
+            const lim = Math.max(P.landW, P.landD) * 0.75 + 6;
+            WALK.pos.x = clamp(WALK.pos.x, -lim, lim);
+            WALK.pos.z = clamp(WALK.pos.z, -lim, lim);
+        }
+    }
+    function applyWalkCamera() {
+        camera.position.copy(WALK.pos);
+        camera.lookAt(
+            WALK.pos.x + Math.sin(WALK.yaw) * Math.cos(WALK.pitch),
+            WALK.pos.y + Math.sin(WALK.pitch),
+            WALK.pos.z + Math.cos(WALK.yaw) * Math.cos(WALK.pitch)
+        );
+    }
+    function toggleWalk() {
+        V.walk = !V.walk;
+        const b = document.getElementById('btnWalk');
+        if (b) { b.classList.toggle('active', V.walk); b.innerText = V.walk ? '🚪 خروج من الجولة' : '🚶 جولة داخل المشروع'; }
+        document.getElementById('walkPad').classList.toggle('hidden', !V.walk);
+        if (V.walk) {
+            const P = curParams || computeParams();
+            V.autoRotate = false;
+            WALK.pos.set(0, P.base + 1.65, P.houseZ + P.d / 2 + 7);
+            WALK.yaw = Math.PI; WALK.pitch = -0.05;
+        } else { resetCamera(); }
+    }
+    function walkPush(v) { WALK.push = v; }
+
+    /* ============ أبعاد على النموذج ============ */
+    function buildDims(P) {
+        if (!V.dims) return;
+        dimGroup = new THREE.Group(); world.add(dimGroup);
+        const y = 0.4, off = 1.4;
+        const line = function (x1, z1, x2, z2) {
+            const g2 = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x1, y, z1), new THREE.Vector3(x2, y, z2)]);
+            geoPool.push(g2);
+            dimGroup.add(new THREE.Line(g2, new THREE.LineBasicMaterial({ color: 0x10b981 })));
+        };
+        const tag = function (t, x, yy, z) { const s = makeLabel(t); s.position.set(x, yy, z); dimGroup.add(s); };
+        const z0 = P.houseZ - P.d / 2, z1 = P.houseZ + P.d / 2;
+        line(-P.w / 2, z1 + off, P.w / 2, z1 + off);
+        tag(P.w.toFixed(1) + ' م', 0, 1.2, z1 + off);
+        line(P.w / 2 + off, z0, P.w / 2 + off, z1);
+        tag(P.d.toFixed(1) + ' م', P.w / 2 + off, 1.2, P.houseZ);
+        line(-P.landW / 2, P.landD / 2 + 0.6, P.landW / 2, P.landD / 2 + 0.6);
+        tag('الأرض ' + P.landW.toFixed(1) + ' × ' + P.landD.toFixed(1) + ' م', 0, 1.2, P.landD / 2 + 1.4);
+        tag('الارتفاع ' + (P.base + P.floors * P.fh).toFixed(1) + ' م', -P.w / 2 - 1.2, P.base + P.floors * P.fh, P.houseZ);
+    }
+
+    /* ============ لقطة PNG ============ */
+    function snapshot3D() {
+        if (!renderer) return null;
+        renderer.render(scene, camera);
+        return renderer.domElement.toDataURL('image/png');
+    }
+    function downloadSnapshot() {
+        const url = snapshot3D(); if (!url) return;
+        const a = document.createElement('a');
+        a.href = url; a.download = 'نموذج-المشروع.png'; a.click();
+    }
+
+    /* =========================================================
+       قراءة المدخلات وتحويلها لأبعاد حقيقية بالمتر
+       ========================================================= */
+    function computeParams() {
+        const landArea = clamp(num('landArea', 400), 100, 6000);
+        const builtArea = clamp(num('builtArea', 300), 50, 5000);
+        const floors = clamp(Math.round(num('modelFloors', 2)), 1, 3);
+        const rooms = readRooms();
+        const hasBasement = !!(document.getElementById('hasBasement') || {}).checked;
+
+        let landW = Math.sqrt(landArea * 1.15);
+        let landD = landArea / landW;
+        landW = clamp(landW, 9, 70); landD = clamp(landD, 9, 70);
+
+        let need = builtArea / floors;
+        if (typeof buildFloorPrograms === 'function') {
+            const pm = buildFloorPrograms({ floors: floors, hasBasement: hasBasement });
+            let mx = 0;
+            Object.keys(pm).forEach(function (k) {
+                if (+k >= 0) mx = Math.max(mx, pm[k].reduce(function (s, i) { return s + i.area; }, 0));
+            });
+            need = Math.max(need, mx * 1.26);
+        }
+        const footprint = Math.min(need, landArea * 0.7);
+        let w = Math.sqrt(footprint * 1.22), d = footprint / Math.max(w, 1);
+        const maxW = landW - 3.6, maxD = landD - 7.0;
+        if (w > maxW) { w = maxW; d = footprint / w; }
+        if (d > maxD) { d = maxD; w = clamp(footprint / d, 5, maxW); }
+        w = clamp(w, 5.5, 34); d = clamp(d, 5.5, 30);
+
+        const frontYard = clamp((landD - d) * 0.62, 2.2, 11);
+        const houseZ = landD / 2 - d / 2 - frontYard;
+        const fh = 3.45;
+        const base = clamp(num('raiseH', 0.45), 0, 2.5);
+        const bDepth = hasBasement ? clamp(num('basementDepth', 3), 2.2, 5) : 0;
+        const parking = clamp(Math.round(num('parkCount', 2)), 0, 12);
+        const totalH = base + floors * fh + 1.2;
+
+        return {
+            landArea: landArea, builtArea: builtArea, floors: floors, rooms: rooms,
+            hasBasement: hasBasement, bDepth: bDepth, parking: parking,
+            landW: landW, landD: landD, w: w, d: d, fh: fh, base: base, thk: 0.3,
+            houseZ: houseZ, totalH: totalH,
+            minDist: Math.max(6, w * 0.5), maxDist: Math.max(landW, landD) * 3.2
+        };
+    }
+
+    function signature() {
+        return [num('landArea'), num('modelFloors'), num('raiseH'), num('parkCount'),
+            (document.getElementById('hasBasement') || {}).checked, num('basementDepth'), num('basementArea'),
+            V.style, V.mode, V.phase, V.floor, V.furniture,
+            JSON.stringify(typeof APP !== 'undefined' ? APP.rooms : readRooms())].join('|');
+    }
+
+    function scheduleModelUpdate() {
+        if (!renderer) return;
+        clearTimeout(rebuildTimer);
+        rebuildTimer = setTimeout(function () {
+            if (signature() === lastSignature) return;
+            rebuildModel(false);
+        }, 260);
+    }
+
+    /* =========================================================
+       نظام الجدران والفتحات (فتحات حقيقية مفرّغة من الجدار)
+       ========================================================= */
+    function rectShape(len, hgt) {
+        const s = new THREE.Shape();
+        s.moveTo(-len / 2, 0); s.lineTo(len / 2, 0); s.lineTo(len / 2, hgt); s.lineTo(-len / 2, hgt); s.lineTo(-len / 2, 0);
+        return s;
+    }
+    function openingPath(o, e) {
+        e = e || 0;
+        const w = o.w + 2 * e, h = o.h + 2 * e, y = o.y - e, x = o.x;
+        const x1 = x - w / 2, x2 = x + w / 2;
+        const p = new THREE.Path();
+        if (o.arch) {
+            const r = w / 2, top = y + h - r;
+            p.moveTo(x1, y); p.lineTo(x2, y); p.lineTo(x2, top);
+            p.absarc(x, top, r, 0, Math.PI, false);
+            p.lineTo(x1, y);
+        } else {
+            p.moveTo(x1, y); p.lineTo(x2, y); p.lineTo(x2, y + h); p.lineTo(x1, y + h); p.lineTo(x1, y);
+        }
+        return p;
+    }
+    function shapeOf(path) { return new THREE.Shape(path.getPoints(36)); }
+
+    /* جدار كامل بفتحاته وتفاصيلها. المحور المحلي: X=الطول، Y=الارتفاع، +Z=الخارج */
+    function wallUnit(opt) {
+        const g = new THREE.Group();
+        g.position.set(opt.x || 0, opt.y || 0, opt.z || 0);
+        g.rotation.y = opt.ry || 0;
+
+        const thk = opt.thk || 0.3;
+        const shape = rectShape(opt.len, opt.hgt);
+        const ops = (opt.openings || []).filter(function (o) {
+            return o.x - o.w / 2 > -opt.len / 2 + 0.2 && o.x + o.w / 2 < opt.len / 2 - 0.2 && o.y + o.h < opt.hgt - 0.12;
+        });
+        ops.forEach(function (o) { shape.holes.push(openingPath(o, 0)); });
+
+        const geo = track(new THREE.ExtrudeGeometry(shape, { depth: thk, bevelEnabled: false, curveSegments: 20 }));
+        geo.translate(0, 0, -thk / 2);
+        const mesh = new THREE.Mesh(geo, opt.ghost ? MAT.ghost : (opt.mat || MAT.wall));
+        mesh.castShadow = !opt.ghost; mesh.receiveShadow = true;
+        g.add(mesh);
+
+        if (!opt.bare) ops.forEach(function (o) { openingDetail(g, o, thk); });
+        return g;
+    }
+
+    function openingDetail(g, o, thk) {
+        const zOut = thk / 2, ornate = (V.style !== 'modern');
+
+        if (o.kind === 'void') return;
+
+        /* إطار محيط بالفتحة */
+        const ring = shapeOf(openingPath(o, ornate ? 0.16 : 0.09));
+        ring.holes.push(openingPath(o, 0));
+        const ringGeo = track(new THREE.ExtrudeGeometry(ring, { depth: ornate ? 0.11 : 0.06, bevelEnabled: false, curveSegments: 20 }));
+        const ringMesh = new THREE.Mesh(ringGeo, ornate ? MAT.trim : MAT.accent);
+        ringMesh.position.z = zOut - 0.01; ringMesh.castShadow = true; ringMesh.receiveShadow = true;
+        g.add(ringMesh);
+
+        if (o.kind === 'door' || o.kind === 'maindoor') {
+            const leafW = o.w / 2 - 0.04;
+            const dm = o.kind === 'maindoor' ? MAT.wood : MAT.white;
+            [-1, 1].forEach(function (s) {
+                const leaf = addBox(g, leafW, o.h - 0.06, 0.07, dm, o.x + s * (leafW / 2 + 0.02), o.y + (o.h - 0.06) / 2, zOut - 0.11);
+                leaf.receiveShadow = true;
+                addBox(g, leafW * 0.62, (o.h - 0.06) * 0.42, 0.02, MAT.accent, o.x + s * (leafW / 2 + 0.02), o.y + o.h * 0.62, zOut - 0.075);
+            });
+            addCyl(g, 0.035, 0.035, 0.24, 8, MAT.metal, o.x - 0.16, o.y + 1.05, zOut - 0.06);
+            addCyl(g, 0.035, 0.035, 0.24, 8, MAT.metal, o.x + 0.16, o.y + 1.05, zOut - 0.06);
+            if (o.kind === 'maindoor') addBox(g, o.w + 0.5, 0.06, 0.5, MAT.stone, o.x, o.y + 0.02, zOut + 0.1);
+            return;
+        }
+
+        /* زجاج داخل الفتحة */
+        const glassGeo = track(new THREE.ShapeGeometry(shapeOf(openingPath(o, -0.05)), 20));
+        const glass = new THREE.Mesh(glassGeo, MAT.glass);
+        glass.position.z = zOut - 0.13;
+        g.add(glass);
+        glass.name = 'glass';
+
+        /* قوائم التقسيم */
+        const barZ = zOut - 0.1;
+        addBox(g, 0.06, o.h - 0.06, 0.05, MAT.accent, o.x, o.y + o.h / 2, barZ);
+        addBox(g, o.w - 0.06, 0.06, 0.05, MAT.accent, o.x, o.y + o.h * 0.55, barZ);
+
+        /* عتبة سفلية بارزة */
+        addBox(g, o.w + 0.42, 0.1, thk + 0.3, MAT.stone, o.x, o.y - 0.05, 0.06);
+
+        /* شيش خشبي على الجانبين للطراز الكلاسيكي */
+        if (V.style === 'classic' && o.h > 1.1) {
+            [-1, 1].forEach(function (s) {
+                addBox(g, o.w * 0.42, o.h * 0.92, 0.07, MAT.wood, o.x + s * (o.w / 2 + o.w * 0.24 + 0.1), o.y + o.h * 0.46, zOut + 0.06);
+            });
+        }
+        /* حاجز حديدي أمام النوافذ في الدور الأرضي */
+        if (o.guard) {
+            for (let i = 0; i < 5; i++) {
+                addCyl(g, 0.022, 0.022, o.h * 0.72, 6, MAT.darkMetal, o.x - o.w / 2 + (o.w / 4) * i * 0.99 + 0.02, o.y + o.h * 0.36, zOut + 0.09);
+            }
+            addBox(g, o.w, 0.05, 0.05, MAT.darkMetal, o.x, o.y + 0.06, zOut + 0.09);
+            addBox(g, o.w, 0.05, 0.05, MAT.darkMetal, o.x, o.y + o.h * 0.72, zOut + 0.09);
+        }
+    }
+
+    function spreadX(len, n, margin) {
+        const out = []; if (n <= 0) return out;
+        const usable = Math.max(len - 2 * margin, 0.5);
+        for (let i = 0; i < n; i++) out.push(-usable / 2 + usable * (i + 0.5) / n);
+        return out;
+    }
+
+    /* =========================================================
+       الفيلا: الجدران، الفتحات، الواجهة، السطح
+       ========================================================= */
+    function buildVilla(P, cutaway) {
+        const g = new THREE.Group();
+        g.position.z = P.houseZ;
+        world.add(g);
+
+        const w = P.w, d = P.d, thk = P.thk, fh = P.fh, arch = (V.style !== 'modern');
+
+        /* قاعدة المبنى والدرج الأمامي */
+        addBox(g, w + 0.8, P.base, d + 0.8, MAT.stone, 0, P.base / 2, 0);
+        for (let i = 0; i < 3; i++) {
+            addBox(g, Math.min(4.2, w * 0.4), 0.15, 0.36, MAT.stone, 0, 0.075 + i * 0.14, d / 2 + 1.0 - i * 0.34);
+        }
+
+        const startF = P.hasBasement ? -1 : 0;
+        const showFloors = cutaway ? Math.max(V.floor, startF) : P.floors - 1;
+
+        for (let f = startF; f <= showFloors; f++) {
+            const y0 = f < 0 ? P.base - P.bDepth : P.base + f * fh;
+            const wallH = f < 0 ? P.bDepth - 0.4 : fh - 0.3;
+            const inside = cutaway && f === V.floor;
+            const gh = { front: inside, right: inside };
+
+            /* --- القبو: جدران ساندة خرسانية ومنور --- */
+            if (f < 0) {
+                addBox(g, w + 0.9, 0.4, d + 0.9, MAT.concreteDark, 0, y0 - 0.2, 0);
+                addBox(g, w - 2 * thk, 0.08, d - 2 * thk, MAT.tileFloor, 0, y0 + 0.04, 0);
+                const bMat = MAT.concrete;
+                g.add(wallUnit({ len: w, hgt: wallH, thk: 0.36, openings: [], x: 0, y: y0, z: d / 2 - 0.18, ry: 0, ghost: gh.front, mat: bMat, bare: true }));
+                g.add(wallUnit({ len: w, hgt: wallH, thk: 0.36, openings: [], x: 0, y: y0, z: -d / 2 + 0.18, ry: Math.PI, mat: bMat, bare: true }));
+                g.add(wallUnit({ len: d, hgt: wallH, thk: 0.36, openings: [], x: w / 2 - 0.18, y: y0, z: 0, ry: Math.PI / 2, ghost: gh.right, mat: bMat, bare: true }));
+                g.add(wallUnit({ len: d, hgt: wallH, thk: 0.36, openings: [], x: -w / 2 + 0.18, y: y0, z: 0, ry: -Math.PI / 2, mat: bMat, bare: true }));
+                /* منور القبو ومنحدر الدخول */
+                addBox(g, 2.6, P.bDepth, 1.8, MAT.concreteDark, -w / 3, y0 + P.bDepth / 2, d / 2 + 1.4);
+                addBox(g, 2.2, 0.08, 1.4, MAT.glass, -w / 3, P.base + 0.02, d / 2 + 1.4);
+                if (inside) buildInterior(g, P, f, y0);
+                continue;
+            }
+
+            /* بلاطة الدور */
+            addBox(g, w + 0.5, 0.3, d + 0.5, MAT.wall2, 0, y0 - 0.15, 0);
+            /* أرضية الدور */
+            addBox(g, w - 2 * thk, 0.06, d - 2 * thk, MAT.marble, 0, y0 + 0.03, 0);
+
+            const isGround = (f === 0);
+            const winH = isGround ? 1.7 : 1.5;
+            const winY = 1.0;
+            const winW = 1.35;
+
+            /* --- الواجهة الأمامية (+Z) --- */
+            const front = [];
+            if (isGround) {
+                const doorW = Math.min(1.9, w * 0.18);
+                front.push({ x: 0, y: 0, w: doorW, h: 2.7, arch: arch, kind: 'maindoor' });
+                spreadX(w, clamp(Math.round(w / 3.4), 2, 6), 1.1).forEach(function (x) {
+                    if (Math.abs(x) > doorW / 2 + 1.2) front.push({ x: x, y: winY, w: winW, h: winH, arch: arch, kind: 'win', guard: true });
+                });
+            } else {
+                const balW = Math.min(2.4, w * 0.22);
+                front.push({ x: 0, y: 0.02, w: balW, h: 2.45, arch: arch, kind: 'win' });
+                spreadX(w, clamp(Math.round(w / 3.4), 2, 6), 1.1).forEach(function (x) {
+                    if (Math.abs(x) > balW / 2 + 1.1) front.push({ x: x, y: winY, w: winW, h: winH, arch: arch, kind: 'win' });
+                });
+            }
+            g.add(wallUnit({ len: w, hgt: wallH, thk: thk, openings: front, x: 0, y: y0, z: d / 2 - thk / 2, ry: 0, ghost: gh.front, mat: MAT.wall }));
+
+            /* --- الواجهة الخلفية (−Z) --- */
+            const back = [];
+            spreadX(w, clamp(Math.round(w / 3.8), 2, 5), 1.2).forEach(function (x, i) {
+                back.push({ x: x, y: winY, w: i === 0 && isGround ? 1.0 : winW, h: winH, kind: 'win', guard: isGround });
+            });
+            g.add(wallUnit({ len: w, hgt: wallH, thk: thk, openings: back, x: 0, y: y0, z: -d / 2 + thk / 2, ry: Math.PI, mat: MAT.wall }));
+
+            /* --- الجانبان --- */
+            const sideOps = function () {
+                const arr = [];
+                spreadX(d, clamp(Math.round(d / 3.8), 2, 5), 1.2).forEach(function (z) {
+                    arr.push({ x: z, y: winY, w: winW * 0.85, h: winH, kind: 'win', guard: isGround });
+                });
+                return arr;
+            };
+            g.add(wallUnit({ len: d, hgt: wallH, thk: thk, openings: sideOps(), x: w / 2 - thk / 2, y: y0, z: 0, ry: Math.PI / 2, ghost: gh.right, mat: MAT.wall }));
+            g.add(wallUnit({ len: d, hgt: wallH, thk: thk, openings: sideOps(), x: -w / 2 + thk / 2, y: y0, z: 0, ry: -Math.PI / 2, mat: MAT.wall }));
+
+            /* حزام كرنيش بين الأدوار */
+            const bandY = y0 + wallH + 0.02;
+            addBox(g, w + 0.62, 0.26, 0.36, MAT.trim, 0, bandY, d / 2 + 0.04);
+            addBox(g, w + 0.62, 0.26, 0.36, MAT.trim, 0, bandY, -d / 2 - 0.04);
+            addBox(g, 0.36, 0.26, d + 0.62, MAT.trim, w / 2 + 0.04, bandY, 0);
+            addBox(g, 0.36, 0.26, d + 0.62, MAT.trim, -w / 2 - 0.04, bandY, 0);
+
+            /* كسوة حجرية أسفل الدور الأرضي */
+            if (isGround) {
+                const clad = 1.05;
+                [[w + 0.16, clad, 0.1, 0, d / 2 + 0.04], [w + 0.16, clad, 0.1, 0, -d / 2 - 0.04]].forEach(function (c) {
+                    addBox(g, c[0], c[1], c[2], MAT.stone, c[3], y0 + clad / 2, c[4]);
+                });
+                [[0.1, clad, d + 0.16, w / 2 + 0.04, 0], [0.1, clad, d + 0.16, -w / 2 - 0.04, 0]].forEach(function (c) {
+                    addBox(g, c[0], c[1], c[2], MAT.stone, c[3], y0 + clad / 2, c[4]);
+                });
+            }
+
+            /* أعمدة الزوايا (كوينز) للطرز الكلاسيكية */
+            if (arch) {
+                [[-1, -1], [-1, 1], [1, -1], [1, 1]].forEach(function (s) {
+                    addBox(g, 0.55, wallH, 0.55, MAT.trim, s[0] * (w / 2 - 0.1), y0 + wallH / 2, s[1] * (d / 2 - 0.1));
+                });
+            }
+
+            /* شرفة الأدوار العلوية */
+            if (!isGround) {
+                buildBalcony(g, P, y0, Math.min(4.6, w * 0.45));
+            }
+
+            if (inside) buildInterior(g, P, f, y0);
+        }
+
+        if (!cutaway) buildRoof(g, P);
+        buildEntrance(g, P);
+        buildFacadeExtras(g, P);
+        return g;
+    }
+
+    function buildBalcony(g, P, y0, bw) {
+        const d = P.d, z = d / 2 + 0.9;
+        addBox(g, bw, 0.22, 1.9, MAT.wall2, 0, y0 + 0.05, z);
+        if (V.style === 'modern') {
+            const panel = new THREE.Mesh(track(new THREE.BoxGeometry(bw, 1.0, 0.05)), MAT.glass);
+            panel.position.set(0, y0 + 0.66, z + 0.92); panel.castShadow = true; g.add(panel);
+            addBox(g, bw, 0.07, 0.12, MAT.metal, 0, y0 + 1.18, z + 0.92);
+            [-1, 1].forEach(function (s) { addBox(g, 0.06, 1.0, 1.9, MAT.metal, s * bw / 2, y0 + 0.66, z); });
+        } else {
+            for (let x = -bw / 2 + 0.18; x <= bw / 2 - 0.1; x += 0.32) {
+                addCyl(g, 0.05, 0.08, 0.85, 8, MAT.trim, x, y0 + 0.58, z + 0.92);
+            }
+            addBox(g, bw, 0.12, 0.22, MAT.trim, 0, y0 + 1.06, z + 0.92);
+            addBox(g, bw, 0.12, 0.22, MAT.trim, 0, y0 + 0.2, z + 0.92);
+            [-1, 1].forEach(function (s) {
+                for (let zz = -0.7; zz <= 0.75; zz += 0.32) addCyl(g, 0.05, 0.08, 0.85, 8, MAT.trim, s * bw / 2, y0 + 0.58, z + zz);
+                addBox(g, 0.2, 0.12, 1.9, MAT.trim, s * bw / 2, y0 + 1.06, z);
+            });
+            /* كوابيل تحت الشرفة */
+            [-1, 0, 1].forEach(function (s) { addBox(g, 0.3, 0.45, 0.9, MAT.trim, s * bw * 0.35, y0 - 0.18, d / 2 + 0.45); });
+        }
+    }
+
+    function buildEntrance(g, P) {
+        const d = P.d, w = P.w, arch = (V.style !== 'modern');
+        const pw = Math.min(5.0, w * 0.44), pz = d / 2 + 1.35, ph = P.base + 3.35;
+
+        if (arch) {
+            /* بورتيكو بأعمدة دائرية */
+            [-1, 1].forEach(function (s) {
+                const x = s * (pw / 2 - 0.35);
+                addCyl(g, 0.28, 0.32, 3.0, 18, MAT.trim, x, P.base + 1.55, pz + 0.6);
+                addCyl(g, 0.42, 0.42, 0.2, 18, MAT.trim, x, P.base + 0.12, pz + 0.6);
+                addCyl(g, 0.42, 0.34, 0.28, 18, MAT.trim, x, P.base + 3.15, pz + 0.6);
+            });
+            addBox(g, pw + 0.7, 0.36, 2.4, MAT.trim, 0, ph + 0.15, pz + 0.15);
+            /* جملون مثلث */
+            const tri = new THREE.Shape();
+            tri.moveTo(-pw / 2 - 0.3, 0); tri.lineTo(pw / 2 + 0.3, 0); tri.lineTo(0, 1.1); tri.lineTo(-pw / 2 - 0.3, 0);
+            const triMesh = new THREE.Mesh(track(new THREE.ExtrudeGeometry(tri, { depth: 0.45, bevelEnabled: false })), MAT.trim);
+            triMesh.position.set(0, ph + 0.33, pz + 0.9); triMesh.castShadow = true; g.add(triMesh);
+        } else {
+            /* مظلة خرسانية كابولية */
+            addBox(g, pw + 1.0, 0.3, 2.6, MAT.accent, 0, ph, pz + 0.2);
+            [-1, 1].forEach(function (s) {
+                addBox(g, 0.26, 3.2, 0.26, MAT.accent, s * (pw / 2 + 0.2), P.base + 1.6, pz + 1.2);
+            });
+            /* شرائح خشبية تزيينية على الواجهة */
+            for (let i = 0; i < 7; i++) {
+                addBox(g, 0.16, 3.1, 0.1, MAT.wood, -pw / 2 - 1.4 - i * 0.28, P.base + 1.7, d / 2 + 0.08);
+            }
+        }
+
+        /* مصابيح جدارية جانب المدخل */
+        [-1, 1].forEach(function (s) {
+            const x = s * (Math.min(1.9, P.w * 0.18) / 2 + 0.65);
+            addBox(g, 0.16, 0.42, 0.16, MAT.darkMetal, x, P.base + 2.25, d / 2 + 0.14);
+            const bulb = addBox(g, 0.11, 0.3, 0.11, MAT.lamp, x, P.base + 2.25, d / 2 + 0.22);
+            bulb.name = 'lampFace';
+        });
+
+        /* لوحة رقم المبنى */
+        addBox(g, 0.5, 0.34, 0.05, MAT.white, Math.min(1.9, P.w * 0.18) / 2 + 1.35, P.base + 2.3, d / 2 + 0.16);
+    }
+
+    function buildFacadeExtras(g, P) {
+        const w = P.w, d = P.d;
+        /* ماسورة تصريف على الزوايا الخلفية */
+        [[-1, -1], [1, -1]].forEach(function (s) {
+            addCyl(g, 0.07, 0.07, P.floors * P.fh + 0.3, 8, MAT.wall2, s[0] * (w / 2 - 0.12), (P.floors * P.fh) / 2, s[1] * (d / 2 - 0.12));
+        });
+        /* وحدات تكييف خارجية على الجانب */
+        for (let i = 0; i < Math.min(P.floors * 2, 4); i++) {
+            const y = P.base + 0.9 + Math.floor(i / 2) * P.fh;
+            const z = -d / 4 + (i % 2) * 1.4;
+            addBox(g, 0.85, 0.62, 0.4, MAT.white, -w / 2 - 0.28, y, z);
+            addCyl(g, 0.24, 0.24, 0.06, 14, MAT.darkMetal, -w / 2 - 0.5, y, z).rotation.z = Math.PI / 2;
+            addBox(g, 0.06, 0.7, 0.5, MAT.darkMetal, -w / 2 - 0.06, y - 0.35, z);
+        }
+    }
+
+    function buildRoof(g, P) {
+        const w = P.w, d = P.d, y = P.base + P.floors * P.fh;
+
+        /* بلاطة السطح */
+        addBox(g, w + 0.5, 0.32, d + 0.5, MAT.wall2, 0, y - 0.16, 0);
+
+        if (V.style === 'classic') {
+            /* سقف هرمي بقرميد */
+            const r = (w + 1.4) / Math.SQRT2;
+            const roof = new THREE.Mesh(track(new THREE.ConeGeometry(r, 2.3, 4)), MAT.roof);
+            roof.rotation.y = Math.PI / 4;
+            roof.scale.z = (d + 1.4) / (w + 1.4);
+            roof.position.y = y + 1.15;
+            roof.castShadow = true; roof.receiveShadow = true; g.add(roof);
+            addBox(g, w + 1.5, 0.22, d + 1.5, MAT.trim, 0, y + 0.05, 0);
+        } else {
+            /* دروة (بارابيت) مع كرنيش علوي */
+            const ph = V.style === 'neoclassic' ? 1.25 : 1.05;
+            [[w + 0.5, ph, 0.28, 0, d / 2 + 0.11], [w + 0.5, ph, 0.28, 0, -d / 2 - 0.11]].forEach(function (b) {
+                addBox(g, b[0], b[1], b[2], MAT.wall, b[3], y + ph / 2, b[4]);
+            });
+            [[0.28, ph, d + 0.5, w / 2 + 0.11, 0], [0.28, ph, d + 0.5, -w / 2 - 0.11, 0]].forEach(function (b) {
+                addBox(g, b[0], b[1], b[2], MAT.wall, b[3], y + ph / 2, b[4]);
+            });
+            addBox(g, w + 0.9, 0.16, d + 0.9, MAT.trim, 0, y + ph + 0.08, 0);
+            if (V.style === 'neoclassic') {
+                for (let x = -w / 2; x <= w / 2; x += 0.42) addCyl(g, 0.06, 0.09, 0.55, 8, MAT.trim, x, y + 0.75, d / 2 + 0.11);
+            }
+        }
+
+        /* غرفة الدرج على السطح */
+        const shW = Math.min(4.0, w * 0.4), shD = Math.min(3.4, d * 0.34);
+        const shX = -w / 4, shZ = -d / 4;
+        const shY = y + 0.05;
+        g.add(wallUnit({ len: shW, hgt: 2.7, thk: 0.22, openings: [{ x: 0, y: 0, w: 1.0, h: 2.1, kind: 'door' }], x: shX, y: shY, z: shZ + shD / 2, ry: 0, mat: MAT.wall }));
+        g.add(wallUnit({ len: shW, hgt: 2.7, thk: 0.22, openings: [{ x: 0, y: 1.1, w: 1.0, h: 1.0, kind: 'win' }], x: shX, y: shY, z: shZ - shD / 2, ry: Math.PI, mat: MAT.wall }));
+        g.add(wallUnit({ len: shD, hgt: 2.7, thk: 0.22, openings: [], x: shX + shW / 2, y: shY, z: shZ, ry: Math.PI / 2, mat: MAT.wall }));
+        g.add(wallUnit({ len: shD, hgt: 2.7, thk: 0.22, openings: [], x: shX - shW / 2, y: shY, z: shZ, ry: -Math.PI / 2, mat: MAT.wall }));
+        addBox(g, shW + 0.4, 0.24, shD + 0.4, MAT.trim, shX, shY + 2.8, shZ);
+
+        /* خزانات المياه والسخان الشمسي */
+        const tX = w / 4;
+        [-0.9, 0.9].forEach(function (o) {
+            addCyl(g, 0.72, 0.72, 1.5, 18, MAT.white, tX + o, y + 1.05, -d / 4);
+            addCyl(g, 0.74, 0.74, 0.1, 18, MAT.metal, tX + o, y + 1.82, -d / 4);
+        });
+        addBox(g, 2.1, 0.12, 1.3, MAT.darkMetal, tX, y + 0.55, d / 5).rotation.x = -0.42;
+        addCyl(g, 0.32, 0.32, 1.9, 14, MAT.metal, tX, y + 0.95, d / 5 - 0.75).rotation.z = Math.PI / 2;
+
+        /* صحن لاقط وأنتينا */
+        addSphere(g, 0.45, MAT.white, -w / 3, y + 0.9, d / 3).scale.set(1, 0.35, 1);
+        addCyl(g, 0.05, 0.05, 1.1, 6, MAT.metal, -w / 3, y + 0.55, d / 3);
+
+        /* درابزين السطح المعدني */
+        if (V.style === 'modern') {
+            for (let x = -w / 2 + 0.6; x <= w / 2 - 0.4; x += 1.6) addCyl(g, 0.04, 0.04, 0.9, 6, MAT.metal, x, y + 1.5, d / 2 + 0.1);
+        }
+    }
+
+    /* =========================================================
+       المقطع الداخلي: توزيع الغرف والأثاث
+       ========================================================= */
+    function programForFloor(P, f) {
+        if (typeof buildFloorPrograms === 'function') {
+            const map = buildFloorPrograms(P);
+            const list = map[f];
+            if (list && list.length) return list.map(function (x) { return { type: x.type, label: x.label, area: x.area }; });
+        }
+        return [{ type: 'hall', label: 'مساحة مفتوحة', area: 30 }];
+    }
+
+    function worstRatio(row, short) {
+        const sum = row.reduce(function (s, i) { return s + i.area; }, 0);
+        if (sum <= 0 || short <= 0) return Infinity;
+        const thick = sum / short;
+        let worst = 1;
+        row.forEach(function (it) {
+            const len = it.area / thick;
+            if (len > 0) worst = Math.max(worst, Math.max(thick / len, len / thick));
+        });
+        return worst;
+    }
+
+    /* تقسيم مربّعي (squarified treemap) يحافظ على نسب أبعاد معقولة للغرف */
+    function sliceLayout(x0, z0, x1, z1, items) {
+        const out = [];
+        const list = items.filter(function (i) { return i.area > 0; }).sort(function (a, b) { return b.area - a.area; });
+        if (list.length === 0) return out;
+
+        const total = list.reduce(function (s, i) { return s + i.area; }, 0);
+        const scale = ((x1 - x0) * (z1 - z0)) / total;
+        const work = list.map(function (i) { return Object.assign({}, i, { area: i.area * scale, nominal: i.area }); });
+
+        let rect = { x: x0, z: z0, w: x1 - x0, d: z1 - z0 };
+        let queue = work;
+        let guard = 0;
+
+        while (queue.length > 0 && guard++ < 200) {
+            if (queue.length === 1 || rect.w < 0.4 || rect.d < 0.4) {
+                const perArea = queue.reduce(function (s, i) { return s + i.area; }, 0);
+                if (queue.length === 1) {
+                    out.push(Object.assign({}, queue[0], { x0: rect.x, z0: rect.z, x1: rect.x + rect.w, z1: rect.z + rect.d }));
+                    break;
+                }
+                /* حالة نادرة: مساحة متبقية ضيقة — قسّمها بالتساوي */
+                let c = rect.x;
+                queue.forEach(function (it) {
+                    const w = rect.w * (it.area / perArea);
+                    out.push(Object.assign({}, it, { x0: c, z0: rect.z, x1: c + w, z1: rect.z + rect.d }));
+                    c += w;
+                });
+                break;
+            }
+
+            const short = Math.min(rect.w, rect.d);
+            let row = [], best = Infinity;
+            for (let i = 0; i < queue.length; i++) {
+                const cand = row.concat([queue[i]]);
+                const r = worstRatio(cand, short);
+                if (r <= best) { row = cand; best = r; } else break;
+            }
+            if (row.length === 0) row = [queue[0]];
+
+            const rowArea = row.reduce(function (s, i) { return s + i.area; }, 0);
+            const thick = rowArea / short;
+
+            if (rect.w >= rect.d) {
+                let c = rect.z;
+                row.forEach(function (it) {
+                    const h = it.area / thick;
+                    out.push(Object.assign({}, it, { x0: rect.x, z0: c, x1: rect.x + thick, z1: c + h }));
+                    c += h;
+                });
+                rect = { x: rect.x + thick, z: rect.z, w: rect.w - thick, d: rect.d };
+            } else {
+                let c = rect.x;
+                row.forEach(function (it) {
+                    const w = it.area / thick;
+                    out.push(Object.assign({}, it, { x0: c, z0: rect.z, x1: c + w, z1: rect.z + thick }));
+                    c += w;
+                });
+                rect = { x: rect.x, z: rect.z + thick, w: rect.w, d: rect.d - thick };
+            }
+            queue = queue.slice(row.length);
+        }
+        return out;
+    }
+
+    /* مخطط دور كامل: البرنامج + مساحة الممرات المتبقية */
+    function floorPlan(P, f) {
+        const t = P.thk, iw = P.w - 2 * t, id = P.d - 2 * t;
+        const items = programForFloor(P, f);
+        const total = items.reduce(function (s, i) { return s + i.area; }, 0);
+        const avail = iw * id;
+        /* الفائض يذهب للممرات بحد أقصى 18% من الدور، والباقي يوسّع الغرف نفسها */
+        const corridor = Math.min(avail - total, avail * 0.18);
+        if (corridor > 2) items.push({ type: 'corridor', label: 'ممرات وخدمات', area: corridor });
+        return { iw: iw, id: id, rects: sliceLayout(-iw / 2, -id / 2, iw / 2, id / 2, items) };
+    }
+
+    function buildInterior(g, P, f, y0) {
+        const inset = 0.06;
+        const plan = floorPlan(P, f);
+        const iw = plan.iw, id = plan.id, rects = plan.rects;
+        const hgt = P.fh - 0.45;
+
+        rects.forEach(function (r) {
+            const cx = (r.x0 + r.x1) / 2, cz = (r.z0 + r.z1) / 2;
+            const rw = r.x1 - r.x0, rd = r.z1 - r.z0;
+            if (rw < 1.2 || rd < 1.2) return;
+
+            const floorMat = { bath: MAT.tileFloor, kitchen: MAT.tileFloor, bedroom: MAT.woodFloor, majlis: MAT.marble, corridor: MAT.stone }[r.type] || MAT.marble;
+            addBox(g, rw - 0.1, 0.05, rd - 0.1, floorMat, cx, y0 + 0.07, cz);
+
+            /* الممرات تُترك مفتوحة بلا جدران لتظهر حركة التنقل */
+            if (r.type === 'corridor') {
+                const cl = makeLabel(r.label, (rw - 0.12).toFixed(1) + ' × ' + (rd - 0.12).toFixed(1) + ' م');
+                cl.position.set(cx, y0 + 2.2, cz);
+                g.add(cl);
+                return;
+            }
+
+            /* الجدران الداخلية مع فتحة باب على أول ضلع داخلي */
+            const edges = [
+                { kind: 'S', len: rw, x: cx, z: r.z0 + inset, ry: 0, outer: Math.abs(r.z0 + id / 2) < 0.05 },
+                { kind: 'N', len: rw, x: cx, z: r.z1 - inset, ry: Math.PI, outer: Math.abs(r.z1 - id / 2) < 0.05 },
+                { kind: 'W', len: rd, x: r.x0 + inset, z: cz, ry: -Math.PI / 2, outer: Math.abs(r.x0 + iw / 2) < 0.05 },
+                { kind: 'E', len: rd, x: r.x1 - inset, z: cz, ry: Math.PI / 2, outer: Math.abs(r.x1 - iw / 2) < 0.05 }
+            ];
+            let doorPlaced = false;
+            edges.forEach(function (e) {
+                if (e.outer) return;
+                const ops = [];
+                if (!doorPlaced && e.len > 1.6) { ops.push({ x: 0, y: 0, w: 0.95, h: 2.15, kind: 'door' }); doorPlaced = true; }
+                g.add(wallUnit({ len: e.len, hgt: hgt, thk: 0.11, openings: ops, x: e.x, y: y0 + 0.06, z: e.z, ry: e.ry, mat: MAT.white }));
+            });
+
+            if (V.furniture) furnish(g, r, y0, cx, cz, rw, rd);
+
+            const lbl = makeLabel(r.label, (rw - 0.12).toFixed(1) + ' × ' + (rd - 0.12).toFixed(1) + ' م');
+            lbl.position.set(cx, y0 + 2.2, cz);
+            g.add(lbl);
+        });
+    }
+
+    function furnish(g, r, y0, cx, cz, rw, rd) {
+        /* مجموعة محلية تدور لتتماشى مع اتجاه الغرفة الطويل */
+        const grp = new THREE.Group();
+        grp.position.set(cx, y0 + 0.1, cz);
+        const swap = rw < rd;
+        if (swap) grp.rotation.y = Math.PI / 2;
+        g.add(grp);
+        const L = Math.max(rw, rd) - 0.35, S = Math.min(rw, rd) - 0.35;
+
+        const box = function (w, h, d, m, x, y, z) { return addBox(grp, w, h, d, m, x, y, z); };
+
+        switch (r.type) {
+            case 'bedroom':
+                box(Math.min(2.0, L * 0.5), 0.45, Math.min(1.75, S * 0.6), MAT.fabric, -L * 0.12, 0.25, 0);
+                box(Math.min(2.0, L * 0.5), 0.16, Math.min(1.75, S * 0.6) * 0.42, MAT.white, -L * 0.12, 0.55, -Math.min(1.75, S * 0.6) * 0.22);
+                box(0.14, 1.0, Math.min(1.75, S * 0.6) + 0.2, MAT.wood, -L * 0.12 - Math.min(2.0, L * 0.5) / 2, 0.5, 0);
+                box(0.45, 0.45, 0.45, MAT.wood, -L * 0.12, 0.22, Math.min(1.75, S * 0.6) * 0.62);
+                box(0.45, 0.45, 0.45, MAT.wood, -L * 0.12, 0.22, -Math.min(1.75, S * 0.6) * 0.62);
+                box(Math.min(2.2, L * 0.4), 2.1, 0.6, MAT.wood, L * 0.32, 1.05, -S / 2 + 0.3);
+                box(Math.min(2.6, L * 0.5), 0.02, Math.min(1.9, S * 0.7), MAT.carpet, -L * 0.1, 0.01, 0);
+                break;
+            case 'bath':
+                box(0.42, 0.45, 0.62, MAT.white, -L / 2 + 0.4, 0.24, -S / 2 + 0.5);
+                box(0.42, 0.5, 0.16, MAT.white, -L / 2 + 0.4, 0.62, -S / 2 + 0.24);
+                box(Math.min(1.2, L * 0.5), 0.85, 0.5, MAT.marble, L / 2 - 0.7, 0.43, -S / 2 + 0.35);
+                box(0.4, 0.14, 0.3, MAT.white, L / 2 - 0.7, 0.92, -S / 2 + 0.35);
+                box(0.05, 1.9, Math.min(1.1, S * 0.5), MAT.glass, L / 2 - 1.5, 0.95, S / 2 - 0.7);
+                box(Math.min(1.3, L * 0.4), 0.06, Math.min(1.1, S * 0.5), MAT.tileFloor, L / 2 - 0.9, 0.05, S / 2 - 0.7);
+                break;
+            case 'majlis':
+            case 'hall':
+                box(L - 1.0, 0.02, S - 1.0, MAT.carpet, 0, 0.01, 0);
+                box(L * 0.62, 0.42, 0.75, MAT.fabric, 0, 0.24, -S / 2 + 0.5);
+                box(L * 0.62, 0.55, 0.2, MAT.fabric, 0, 0.6, -S / 2 + 0.22);
+                box(0.75, 0.42, S * 0.5, MAT.fabric2, -L / 2 + 0.5, 0.24, S * 0.05);
+                box(0.2, 0.55, S * 0.5, MAT.fabric2, -L / 2 + 0.22, 0.6, S * 0.05);
+                box(0.75, 0.42, S * 0.5, MAT.fabric2, L / 2 - 0.5, 0.24, S * 0.05);
+                box(0.2, 0.55, S * 0.5, MAT.fabric2, L / 2 - 0.22, 0.6, S * 0.05);
+                box(Math.min(1.5, L * 0.3), 0.36, 0.7, MAT.wood, 0, 0.2, 0.15);
+                if (r.type === 'hall') {
+                    box(Math.min(1.9, L * 0.4), 0.5, 0.35, MAT.wood, 0, 0.26, S / 2 - 0.35);
+                    box(Math.min(1.7, L * 0.36), 0.95, 0.06, MAT.darkMetal, 0, 1.25, S / 2 - 0.28);
+                }
+                break;
+            case 'kitchen':
+                box(L - 0.6, 0.9, 0.65, MAT.white, 0, 0.45, -S / 2 + 0.4);
+                box(L - 0.6, 0.06, 0.7, MAT.marble, 0, 0.93, -S / 2 + 0.4);
+                box(L - 0.6, 0.7, 0.38, MAT.wood, 0, 1.85, -S / 2 + 0.25);
+                box(0.7, 1.85, 0.68, MAT.metal, -L / 2 + 0.45, 0.93, S / 2 - 0.5);
+                box(Math.min(1.8, L * 0.45), 0.85, 0.8, MAT.marble, L * 0.1, 0.43, S * 0.15);
+                box(0.5, 0.04, 0.4, MAT.darkMetal, -L * 0.2, 0.97, -S / 2 + 0.4);
+                break;
+            case 'dining':
+                box(Math.min(2.2, L * 0.55), 0.1, Math.min(1.1, S * 0.5), MAT.wood, 0, 0.75, 0);
+                [-1, 1].forEach(function (s) {
+                    for (let i = -1; i <= 1; i++) {
+                        box(0.42, 0.06, 0.42, MAT.fabric, i * 0.7, 0.46, s * (Math.min(1.1, S * 0.5) / 2 + 0.35));
+                        box(0.42, 0.55, 0.06, MAT.fabric, i * 0.7, 0.75, s * (Math.min(1.1, S * 0.5) / 2 + 0.55));
+                    }
+                });
+                for (let i = -1; i <= 1; i += 2) for (let j = -1; j <= 1; j += 2)
+                    box(0.09, 0.72, 0.09, MAT.wood, i * Math.min(2.2, L * 0.55) * 0.4, 0.36, j * Math.min(1.1, S * 0.5) * 0.35);
+                break;
+            case 'stair':
+                for (let i = 0; i < 12; i++) {
+                    box(Math.min(1.3, S * 0.6), 0.16, 0.28, MAT.marble, 0, 0.08 + i * 0.16, -L / 2 + 0.4 + i * 0.28);
+                }
+                box(0.08, 1.0, 3.4, MAT.glass, Math.min(1.3, S * 0.6) / 2, 1.4, -L / 2 + 1.9);
+                break;
+            default:
+                box(L * 0.5, 0.4, S * 0.4, MAT.fabric2, 0, 0.2, 0);
+        }
+    }
+
+    /* =========================================================
+       جدول قياسات الغرف
+       ========================================================= */
+    function computeRoomSchedule(P) {
+        const out = [];
+        for (let f = (P.hasBasement ? -1 : 0); f < P.floors; f++) {
+            const rects = floorPlan(P, f).rects;
+            const rooms = rects.map(function (r) {
+                const rw = Math.max(0, (r.x1 - r.x0) - 0.12), rd = Math.max(0, (r.z1 - r.z0) - 0.12);
+                const lng = Math.max(rw, rd), shr = Math.min(rw, rd);
+                const minShort = { bath: 1.5, stair: 1.5, corridor: 0.8 }[r.type] || 2.4;
+                return { label: r.label, type: r.type, lng: lng, shr: shr, area: rw * rd, tight: shr < minShort };
+            }).sort(function (a, b) { return b.area - a.area; });
+            out.push({ index: f, rooms: rooms, net: rooms.reduce(function (s, r) { return s + r.area; }, 0) });
+        }
+        return out;
+    }
+
+    function renderRoomSchedule() {
+        const body = document.getElementById('roomScheduleBody');
+        if (!body) return;
+        const P = computeParams();
+        const data = computeRoomSchedule(P);
+        let html = '', totalNet = 0, tightCount = 0;
+
+        data.forEach(function (fl) {
+            totalNet += fl.net;
+            html += '<div class="bg-slate-950/60 rounded-2xl border border-slate-800 overflow-hidden print-card">';
+            html += '<div class="flex flex-wrap justify-between gap-2 px-3 py-2 bg-slate-900/70 border-b border-slate-800 print-card">'
+                 + '<span class="font-extrabold text-emerald-400 print-text">' + floorName(fl.index) + '</span>'
+                 + '<span class="text-slate-400 text-[10px] print-text">كتلة الدور ' + P.w.toFixed(1) + ' × ' + P.d.toFixed(1) + ' م · صافي الغرف ' + fl.net.toFixed(1) + ' م²</span></div>';
+            html += '<table class="w-full text-[11px]"><tbody>';
+            fl.rooms.forEach(function (r, i) {
+                if (r.tight) tightCount++;
+                html += '<tr class="' + (i % 2 ? 'bg-slate-900/40' : '') + '">'
+                     + '<td class="px-3 py-1.5 text-slate-300 print-text">' + r.label + '</td>'
+                     + '<td class="px-3 py-1.5 text-left font-bold print-text ' + (r.tight ? 'text-amber-400' : 'text-slate-100') + '" dir="ltr">'
+                     + r.lng.toFixed(2) + ' × ' + r.shr.toFixed(2) + '</td>'
+                     + '<td class="px-3 py-1.5 text-left font-bold text-emerald-400 print-text w-20" dir="ltr">' + r.area.toFixed(1) + ' م²</td></tr>';
+            });
+            html += '</tbody></table></div>';
+        });
+
+        body.innerHTML = html;
+        const eff = P.builtArea > 0 ? (totalNet / P.builtArea) * 100 : 0;
+        document.getElementById('scheduleTotal').innerText =
+            'صافي الغرف ' + totalNet.toFixed(0) + ' م² من ' + P.builtArea.toFixed(0) + ' م² مسطح (' + eff.toFixed(0) + '%)';
+        const note = document.getElementById('scheduleNote');
+        if (note) {
+            note.innerText = tightCount > 0
+                ? 'القياسات صافي داخل الغرفة بعد خصم سماكة الجدران. ' + tightCount + ' غرفة بعرض أقل من الحد العملي (بالبرتقالي) — قلّل عدد الغرف أو زد مسطح البناء.'
+                : 'القياسات صافي داخل الغرفة بعد خصم سماكة الجدران، ومولّدة من المسطح وعدد الغرف — للاسترشاد قبل المخطط المعتمد.';
+        }
+    }
+
+    /* =========================================================
+       الموقع: السور، البوابات، الممر، المظلة، التشجير، الشارع
+       ========================================================= */
+    function buildSite(P) {
+        const g = new THREE.Group(); world.add(g);
+        const lw = P.landW, ld = P.landD;
+
+        /* أرض القطعة */
+        addBox(g, lw, 0.3, ld, MAT.paver, 0, -0.15, 0);
+        /* الشارع والرصيف */
+        addBox(g, lw + 26, 0.06, 8, MAT.asphalt, 0, 0.0, ld / 2 + 5.6);
+        addBox(g, lw + 26, 0.3, 2.4, MAT.concrete, 0, 0.15, ld / 2 + 1.0);
+        for (let x = -lw / 2; x < lw / 2 + 10; x += 2.4) addBox(g, 2.2, 0.02, 2.3, MAT.paver2, x, 0.31, ld / 2 + 1.0);
+
+        /* الحديقة الأمامية والخلفية بحسب الارتدادات الفعلية */
+        const frontYard = Math.max(1.2, ld / 2 - (P.houseZ + P.d / 2));
+        const backYard = Math.max(1.2, (P.houseZ - P.d / 2) + ld / 2);
+        addBox(g, lw * 0.34, 0.06, frontYard * 0.72, MAT.grass, -lw * 0.27, 0.16, ld / 2 - frontYard * 0.55);
+        addBox(g, lw - 2.6, 0.06, backYard * 0.7, MAT.grass, 0, 0.16, -ld / 2 + backYard * 0.52);
+
+        /* السور مع فتحتي البوابة */
+        const gateX = lw * 0.16, gateW = Math.min(5.0, lw * 0.3), pedX = -lw * 0.26, pedW = 1.3;
+        fenceRun(g, lw, 0, ld / 2, 0, [{ x: gateX, w: gateW }, { x: pedX, w: pedW }]);
+        fenceRun(g, lw, 0, -ld / 2, Math.PI, []);
+        fenceRun(g, ld, lw / 2, 0, Math.PI / 2, []);
+        fenceRun(g, ld, -lw / 2, 0, -Math.PI / 2, []);
+
+        buildGate(g, gateX, ld / 2, gateW);
+        buildPedGate(g, pedX, ld / 2, pedW);
+
+        /* ممر السيارات من البوابة إلى المظلة */
+        const drvZ0 = P.houseZ + P.d / 2, drvLen = Math.max(3, ld / 2 - drvZ0);
+        for (let z = 0; z < drvLen; z += 1.2) {
+            for (let x = -gateW / 2 + 0.6; x < gateW / 2; x += 1.2) {
+                addBox(g, 1.1, 0.04, 1.1, (Math.round(x + z) % 2 === 0) ? MAT.paver : MAT.paver2, gateX + x, 0.32, drvZ0 + z + 0.6);
+            }
+        }
+        /* ممشى للمدخل الرئيسي */
+        for (let z = 0; z < drvLen - 0.5; z += 1.0) addBox(g, 1.6, 0.04, 0.9, MAT.stone, 0, 0.32, drvZ0 + z + 0.5);
+
+        /* مظلة السيارات */
+        const bays = Math.max(0, P.parking || 0);
+        if (bays > 0) {
+            const cpZ = drvZ0 + Math.min(3.2, drvLen * 0.45);
+            const cpW = Math.max(gateW - 0.3, Math.min(bays * 2.9, lw - 2.2));
+            addBox(g, cpW, 0.16, 5.4, MAT.metal, gateX, 3.05, cpZ).rotation.x = 0.05;
+            for (let i = 0; i <= bays; i++) {
+                const px = gateX - cpW / 2 + (cpW / bays) * i;
+                addCyl(g, 0.11, 0.11, 3.0, 10, MAT.darkMetal, px, 1.5, cpZ - 2.4);
+                addCyl(g, 0.11, 0.11, 3.0, 10, MAT.darkMetal, px, 1.5, cpZ + 2.4);
+                if (i < bays) addBox(g, 0.08, 0.02, 4.8, MAT.white, px + cpW / bays / 2 * 0 + (cpW / bays) / 2, 0.35, cpZ);
+            }
+            buildCar(g, gateX - cpW / 2 + (cpW / bays) / 2, 0.35, cpZ);
+            if (bays > 1) buildCar(g, gateX - cpW / 2 + (cpW / bays) * 1.5, 0.35, cpZ);
+        }
+
+        /* نخيل وشجيرات */
+        const palms = clamp(Math.round(lw / 7), 2, 5);
+        for (let i = 0; i < palms; i++) {
+            buildPalm(g, -lw / 2 + 1.6 + i * (lw - 3.2) / Math.max(palms - 1, 1), 0.3, ld / 2 - 2.0);
+        }
+        buildPalm(g, -lw / 2 + 2.0, 0.3, -ld / 2 + 2.4);
+        for (let i = 0; i < 6; i++) {
+            addSphere(g, 0.42 + (i % 3) * 0.1, MAT.shrub, -lw * 0.28 + (i - 2.5) * 1.1, 0.55, ld / 2 - 5.6, true);
+        }
+
+        /* عمود إنارة على الشارع */
+        addCyl(g, 0.09, 0.12, 5.4, 10, MAT.darkMetal, lw / 2 + 1.2, 2.7, ld / 2 + 1.6);
+        addBox(g, 0.6, 0.14, 0.28, MAT.darkMetal, lw / 2 + 0.85, 5.4, ld / 2 + 1.6);
+        const streetLamp = addBox(g, 0.42, 0.08, 0.2, MAT.lamp, lw / 2 + 0.7, 5.3, ld / 2 + 1.6);
+        streetLamp.name = 'lampFace';
+    }
+
+    function fenceRun(g, len, cx, cz, ry, gaps) {
+        const s = new THREE.Group(); s.position.set(cx, 0, cz); s.rotation.y = ry; g.add(s);
+        const H = 2.35;
+        const segs = [];
+        const sorted = (gaps || []).slice().sort(function (a, b) { return a.x - b.x; });
+        let cursor = -len / 2;
+        sorted.forEach(function (gp) {
+            if (gp.x - gp.w / 2 > cursor + 0.2) segs.push([cursor, gp.x - gp.w / 2]);
+            cursor = gp.x + gp.w / 2;
+        });
+        if (cursor < len / 2 - 0.2) segs.push([cursor, len / 2]);
+
+        segs.forEach(function (sg) {
+            const L = sg[1] - sg[0], x = (sg[0] + sg[1]) / 2;
+            addBox(s, L, H, 0.24, MAT.wall2, x, H / 2, 0);
+            addBox(s, L, 0.6, 0.3, MAT.stone, x, 0.3, 0);
+            addBox(s, L, 0.14, 0.36, MAT.trim, x, H + 0.07, 0);
+            /* شرائح مفرغة أعلى السور */
+            for (let xx = sg[0] + 0.35; xx < sg[1] - 0.2; xx += 0.42) {
+                addBox(s, 0.1, 0.5, 0.1, MAT.darkMetal, xx, H + 0.42, 0);
+            }
+            addBox(s, L, 0.1, 0.3, MAT.trim, x, H + 0.72, 0);
+            /* أعمدة */
+            const n = Math.max(1, Math.round(L / 3.4));
+            for (let i = 0; i <= n; i++) {
+                const px = sg[0] + (L / n) * i;
+                addBox(s, 0.46, H + 0.55, 0.46, MAT.stone, px, (H + 0.55) / 2, 0);
+                addBox(s, 0.58, 0.16, 0.58, MAT.trim, px, H + 0.66, 0);
+            }
+        });
+    }
+
+    function buildGate(g, cx, cz, w) {
+        const s = new THREE.Group(); s.position.set(cx, 0, cz); g.add(s);
+        addBox(s, w, 0.14, 0.14, MAT.darkMetal, 0, 2.25, 0);
+        addBox(s, w, 0.14, 0.14, MAT.darkMetal, 0, 0.12, 0);
+        addBox(s, w, 0.12, 0.14, MAT.darkMetal, 0, 1.55, 0);
+        for (let x = -w / 2 + 0.12; x <= w / 2 - 0.1; x += 0.24) {
+            addBox(s, 0.09, 2.15, 0.1, x % 0.48 < 0.24 ? MAT.darkMetal : MAT.wood, x, 1.15, 0);
+        }
+        [-1, 1].forEach(function (d) { addBox(s, 0.16, 2.35, 0.22, MAT.darkMetal, d * w / 2, 1.18, 0); });
+    }
+
+    function buildPedGate(g, cx, cz, w) {
+        const s = new THREE.Group(); s.position.set(cx, 0, cz); g.add(s);
+        addBox(s, w, 2.15, 0.1, MAT.wood, 0, 1.1, 0);
+        addBox(s, w + 0.2, 0.16, 0.26, MAT.trim, 0, 2.28, 0);
+        addCyl(s, 0.04, 0.04, 0.28, 8, MAT.metal, w / 2 - 0.22, 1.05, 0.1);
+    }
+
+    function buildCar(g, x, y, z) {
+        const c = new THREE.Group(); c.position.set(x, y, z); g.add(c);
+        const body = M(0x2c3e50, { roughness: 0.35, metalness: 0.5 });
+        const glass = M(0x1b2b3a, { roughness: 0.1, metalness: 0.4, transparent: true, opacity: 0.75 });
+        addBox(c, 1.9, 0.62, 4.4, body, 0, 0.55, 0);
+        addBox(c, 1.72, 0.6, 2.3, glass, 0, 1.12, -0.15);
+        addBox(c, 1.8, 0.18, 2.2, body, 0, 1.44, -0.15);
+        [[-1, 1], [1, 1], [-1, -1], [1, -1]].forEach(function (s) {
+            const wheel = addCyl(c, 0.34, 0.34, 0.22, 14, MAT.darkMetal, s[0] * 0.88, 0.34, s[1] * 1.45);
+            wheel.rotation.z = Math.PI / 2;
+        });
+        addBox(c, 1.4, 0.14, 0.08, MAT.lamp, 0, 0.66, 2.2).name = 'lampFace';
+    }
+
+    function buildPalm(g, x, y, z) {
+        const p = new THREE.Group(); p.position.set(x, y, z); g.add(p);
+        const h = 4.2 + (Math.abs(Math.sin(x * 12.9898 + z * 4.1414)) % 1) * 1.6;
+        for (let i = 0; i < 9; i++) {
+            const seg = addCyl(p, 0.17 - i * 0.008, 0.2 - i * 0.008, h / 9, 10, MAT.palmTrunk, Math.sin(i * 0.5) * 0.06, (h / 9) * (i + 0.5), 0);
+            seg.rotation.z = Math.sin(i) * 0.03;
+        }
+        for (let i = 0; i < 11; i++) {
+            const a = (i / 11) * Math.PI * 2;
+            const frond = new THREE.Mesh(track(new THREE.ConeGeometry(0.26, 2.5, 5)), MAT.frond);
+            frond.position.set(Math.cos(a) * 0.95, h + 0.35 - (i % 3) * 0.16, Math.sin(a) * 0.95);
+            frond.rotation.z = Math.cos(a) * 1.15;
+            frond.rotation.x = -Math.sin(a) * 1.15;
+            frond.castShadow = true; p.add(frond);
+        }
+        addSphere(p, 0.34, M(0xb07030, { roughness: 1 }), 0, h + 0.1, 0, true);
+    }
+
+    /* =========================================================
+       مراحل التنفيذ
+       ========================================================= */
+    function buildPhase(P) {
+        const g = new THREE.Group(); g.position.z = P.houseZ; world.add(g);
+        const w = P.w, d = P.d;
+        const colsX = clamp(Math.round(w / 4.2), 2, 6), colsZ = clamp(Math.round(d / 4.2), 2, 6);
+        const gx = [], gz = [];
+        for (let i = 0; i <= colsX; i++) gx.push(-w / 2 + (w / colsX) * i);
+        for (let i = 0; i <= colsZ; i++) gz.push(-d / 2 + (d / colsZ) * i);
+
+        if (V.phase === 'foundations') {
+            const pitW = w + 3.0, pitD = d + 3.0, berm = 1.3, bh = 1.15;
+            /* أكوام الردم حول الحفرة تُظهر منسوب الحفر */
+            addBox(g, pitW + berm * 2, bh, berm, MAT.soil, 0, bh / 2, pitD / 2 + berm / 2);
+            addBox(g, pitW + berm * 2, bh, berm, MAT.soil, 0, bh / 2, -pitD / 2 - berm / 2);
+            addBox(g, berm, bh, pitD, MAT.soil, pitW / 2 + berm / 2, bh / 2, 0);
+            addBox(g, berm, bh, pitD, MAT.soil, -pitW / 2 - berm / 2, bh / 2, 0);
+            /* قاع الحفرة: طبقة إحلال رملية مدكوكة */
+            addBox(g, pitW, 0.14, pitD, MAT.sand, 0, 0.09, 0);
+
+            gx.forEach(function (x) {
+                gz.forEach(function (z) {
+                    addBox(g, 1.75, 0.1, 1.75, MAT.concreteDark, x, 0.21, z);    /* خرسانة نظافة */
+                    addBox(g, 1.5, 0.5, 1.5, MAT.concrete, x, 0.51, z);          /* قاعدة مسلحة */
+                    addBox(g, 0.45, 1.0, 0.45, MAT.concrete, x, 1.26, z);        /* رقبة العمود */
+                    for (let a = -1; a <= 1; a += 2) for (let b = -1; b <= 1; b += 2)
+                        addCyl(g, 0.022, 0.022, 2.4, 6, MAT.rebar, x + a * 0.16, 1.95, z + b * 0.16);
+                    for (let k = 0; k < 5; k++) {
+                        const yk = 1.85 + k * 0.34;
+                        addBox(g, 0.38, 0.02, 0.02, MAT.rebar, x, yk, z + 0.16);
+                        addBox(g, 0.38, 0.02, 0.02, MAT.rebar, x, yk, z - 0.16);
+                        addBox(g, 0.02, 0.02, 0.38, MAT.rebar, x + 0.16, yk, z);
+                        addBox(g, 0.02, 0.02, 0.38, MAT.rebar, x - 0.16, yk, z);
+                    }
+                });
+            });
+            /* الميد الرابط بين القواعد */
+            gz.forEach(function (z) { addBox(g, w, 0.42, 0.32, MAT.concrete, 0, 1.0, z); });
+            gx.forEach(function (x) { addBox(g, 0.32, 0.42, d, MAT.concrete, x, 1.0, 0); });
+            /* ألواح الشدة الخشبية مركونة بالموقع */
+            for (let i = 0; i < 6; i++) addBox(g, 3.4, 0.06, 0.3, MAT.wood, pitW / 2 + 2.6, 0.05 + i * 0.07, -d / 4 + i * 0.34);
+            return;
+        }
+
+        if (V.phase === 'skeleton') {
+            addBox(g, w + 0.8, 0.4, d + 0.8, MAT.concrete, 0, 0.2, 0);
+            for (let f = 0; f < P.floors; f++) {
+                const y0 = 0.4 + f * P.fh;
+                gx.forEach(function (x) {
+                    gz.forEach(function (z) { addBox(g, 0.45, P.fh - 0.35, 0.45, MAT.concrete, x, y0 + (P.fh - 0.35) / 2, z); });
+                });
+                gz.forEach(function (z) { addBox(g, w, 0.35, 0.35, MAT.concreteDark, 0, y0 + P.fh - 0.35 / 2 - 0.18, z); });
+                gx.forEach(function (x) { addBox(g, 0.35, 0.35, d, MAT.concreteDark, x, y0 + P.fh - 0.35 / 2 - 0.18, 0); });
+                addBox(g, w + 0.6, 0.3, d + 0.6, MAT.concrete, 0, y0 + P.fh - 0.15, 0);
+
+                /* مباني البلوك مع ترك الفتحات */
+                const wallH = P.fh - 0.65;
+                const wins = spreadX(w, clamp(Math.round(w / 3.4), 2, 5), 1.1).map(function (x) {
+                    return { x: x, y: 0.95, w: 1.35, h: 1.6, kind: 'void' };
+                });
+                g.add(wallUnit({ len: w, hgt: wallH, thk: 0.22, openings: wins, x: 0, y: y0, z: d / 2 - 0.12, ry: 0, mat: MAT.block, bare: true }));
+                g.add(wallUnit({ len: w, hgt: wallH, thk: 0.22, openings: wins, x: 0, y: y0, z: -d / 2 + 0.12, ry: Math.PI, mat: MAT.block, bare: true }));
+                const sideWins = spreadX(d, clamp(Math.round(d / 3.6), 2, 4), 1.1).map(function (z) {
+                    return { x: z, y: 0.95, w: 1.2, h: 1.6, kind: 'void' };
+                });
+                g.add(wallUnit({ len: d, hgt: wallH, thk: 0.22, openings: sideWins, x: -w / 2 + 0.12, y: y0, z: 0, ry: -Math.PI / 2, mat: MAT.block, bare: true }));
+                if (f < P.floors - 1) {
+                    g.add(wallUnit({ len: d, hgt: wallH, thk: 0.22, openings: sideWins, x: w / 2 - 0.12, y: y0, z: 0, ry: Math.PI / 2, mat: MAT.block, bare: true }));
+                }
+            }
+            /* سقالات على الواجهة */
+            const topY = 0.4 + P.floors * P.fh;
+            for (let x = -w / 2; x <= w / 2 + 0.1; x += 2.2) {
+                addCyl(g, 0.05, 0.05, topY, 6, MAT.metal, x, topY / 2, d / 2 + 1.0);
+                addCyl(g, 0.05, 0.05, topY, 6, MAT.metal, x, topY / 2, d / 2 + 1.9);
+            }
+            for (let y = 1.8; y < topY; y += 1.8) {
+                addBox(g, w + 0.4, 0.06, 0.06, MAT.metal, 0, y, d / 2 + 1.0);
+                addBox(g, w + 0.4, 0.06, 0.06, MAT.metal, 0, y, d / 2 + 1.9);
+                addBox(g, w + 0.4, 0.05, 0.9, MAT.wood, 0, y + 0.05, d / 2 + 1.45);
+            }
+            /* كومة رمل وبلوك */
+            addSphere(g, 1.5, MAT.sand, -w / 2 - 2.8, 0.2, d / 4, true).scale.set(1, 0.45, 1);
+            for (let i = 0; i < 4; i++) for (let j = 0; j < 3; j++)
+                addBox(g, 0.5, 0.24, 0.22, MAT.block, w / 2 + 2.4 + j * 0.55, 0.12 + i * 0.26, d / 4);
+            return;
+        }
+
+        buildVilla(P, false);
+    }
+
+    /* =========================================================
+       الإضاءة والوضع الليلي
+       ========================================================= */
+    function applyLighting(P) {
+        if (V.sunStudy) {
+            const size = Math.max(P.landW, P.landD) * 0.95;
+            sun.shadow.camera.left = -size; sun.shadow.camera.right = size;
+            sun.shadow.camera.top = size; sun.shadow.camera.bottom = -size;
+            sun.shadow.camera.near = 1; sun.shadow.camera.far = size * 7;
+            sun.shadow.camera.updateProjectionMatrix();
+            applySunStudy(P);
+            renderer.toneMappingExposure = 1.1;
+            return;
+        }
+        const size = Math.max(P.landW, P.landD) * 0.85;
+        sun.shadow.camera.left = -size; sun.shadow.camera.right = size;
+        sun.shadow.camera.top = size; sun.shadow.camera.bottom = -size;
+        sun.shadow.camera.near = 1; sun.shadow.camera.far = size * 5;
+        sun.position.set(size * 0.8, size * 1.1, size * 0.7);
+        sun.target.position.set(0, 0, P.houseZ);
+        sun.shadow.camera.updateProjectionMatrix();
+
+        if (scene.background && scene.background.dispose) scene.background.dispose();
+        scene.background = makeSky(V.night);
+        if (V.night) {
+            sun.intensity = 0.32; sun.color.setHex(0x93b8e8);
+            hemi.intensity = 0.2; ambient.intensity = 0.14;
+            scene.fog = new THREE.Fog(0x0a1524, 70, 220);
+            MAT.glass.emissive.setHex(0xffcf7a); MAT.glass.emissiveIntensity = 0.9; MAT.glass.opacity = 0.85;
+            MAT.lamp.emissive.setHex(0xffd98a); MAT.lamp.emissiveIntensity = 1.6;
+            renderer.toneMappingExposure = 1.25;
+        } else {
+            sun.intensity = 2.0; sun.color.setHex(0xfff3dd);
+            hemi.intensity = 0.55; ambient.intensity = 0.22;
+            scene.fog = new THREE.Fog(0xcfe0ee, 95, 280);
+            MAT.glass.emissive.setHex(0x000000); MAT.glass.opacity = 0.5;
+            MAT.lamp.emissive.setHex(0x000000);
+            renderer.toneMappingExposure = 1.05;
+        }
+    }
+
+    /* =========================================================
+       إعادة البناء الكاملة
+       ========================================================= */
+    function disposeWorld() {
+        world.traverse(function (o) {
+            if (o.isSprite && o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); }
+        });
+        while (world.children.length) world.remove(world.children[0]);
+        geoPool.forEach(function (g) { g.dispose(); }); geoPool = [];
+        matPool.forEach(function (m) { m.dispose(); }); matPool = [];
+    }
+
+    function rebuildModel(resetCam) {
+        if (!renderer) return;
+        disposeWorld();
+        buildMaterials();
+        const P = computeParams();
+        curParams = P;
+        V.floor = clamp(V.floor, P.hasBasement ? -1 : 0, P.floors - 1);
+
+        buildSite(P);
+        if (V.mode === 'phases') buildPhase(P);
+        else buildVilla(P, V.mode === 'interior');
+
+        applyLighting(P);
+        applyOrientation();
+        if (northArrow) northArrow.position.set(-P.landW / 2 - 3.5, 0.4, P.landD / 2 + 2.5);
+        buildDims(P);
+        applyCut(P);
+        renderRoomSchedule();
+        syncFloorSelect(P);
+        updateOverlay(P);
+        lastSignature = signature();
+
+        if (resetCam || CAM.dist > P.maxDist || CAM.dist < P.minDist) resetCamera();
+        else CAM.target.set(0, V.mode === 'interior' ? P.base + V.floor * P.fh + 1.4 : P.totalH * 0.42, P.houseZ * 0.55);
+    }
+
+    function resetCamera() {
+        const P = curParams || computeParams();
+        if (V.mode === 'interior') {
+            CAM.az = 0.75; CAM.pol = 0.72;
+            CAM.dist = Math.max(P.w, P.d) * 1.5;
+            CAM.target.set(0, P.base + V.floor * P.fh + 1.4, P.houseZ);
+        } else {
+            CAM.az = 0.85; CAM.pol = 1.1;
+            CAM.dist = Math.max(P.landW, P.landD) * 1.15 + 8;
+            CAM.target.set(0, P.totalH * 0.42, P.houseZ * 0.55);
+        }
+    }
+
+    /* =========================================================
+       ربط الأزرار والواجهة
+       ========================================================= */
+    function floorName(i) { return i < 0 ? 'القبو' : ['الدور الأرضي', 'الدور الأول', 'الدور الثاني'][i] || ('الدور ' + (i + 1)); }
+    const STYLE_NAMES = { modern: 'مودرن معاصر', classic: 'كلاسيكي فاخر', neoclassic: 'نيوكلاسيك' };
+    const PHASE_NAMES = { foundations: 'الحفر والقواعد المسلحة', skeleton: 'هيكل العظم والأسقف', finishing: 'التشطيب النهائي' };
+
+    function updateOverlay(P) {
+        const t = document.getElementById('overlayTitle'), dsc = document.getElementById('overlayDesc'), st = document.getElementById('canvasStats');
+        if (V.mode === 'phases') {
+            t.innerText = 'مراحل التنفيذ — ' + PHASE_NAMES[V.phase];
+            dsc.innerText = { foundations: 'حفر، خرسانة نظافة، قواعد وأعمدة وميد', skeleton: 'أعمدة وجسور وأسقف مع مباني البلوك', finishing: 'الواجهة النهائية بعد اللياسة والتشطيب' }[V.phase];
+        } else if (V.mode === 'interior') {
+            t.innerText = 'المقطع الداخلي — ' + floorName(V.floor);
+            dsc.innerText = 'توزيع الغرف مولّد من الأعداد المدخلة في القائمة الجانبية';
+        } else {
+            t.innerText = 'الواجهة الخارجية — طراز ' + STYLE_NAMES[V.style];
+            dsc.innerText = 'الكتلة، النوافذ، المدخل، السطح، السور والتنسيق الخارجي';
+        }
+        st.innerText = 'الأرض ' + P.landW.toFixed(1) + ' × ' + P.landD.toFixed(1) + ' م  ·  المبنى ' + P.w.toFixed(1) + ' × ' + P.d.toFixed(1) + ' م  ·  ' + P.floors + ' دور';
+    }
+
+    function syncFloorSelect(P) {
+        const sel = document.getElementById('floorSelect');
+        if (!sel) return;
+        if (V.floor > P.floors - 1) V.floor = P.floors - 1;
+        let html = '';
+        if (P.hasBasement) html += '<option value="-1"' + (V.floor === -1 ? ' selected' : '') + '>القبو</option>';
+        for (let i = 0; i < P.floors; i++) html += '<option value="' + i + '"' + (i === V.floor ? ' selected' : '') + '>' + floorName(i) + '</option>';
+        sel.innerHTML = html;
+    }
+
+    function switchViewMode(mode) {
+        V.mode = mode;
+        const on = 'px-3 py-1.5 rounded-lg font-bold bg-emerald-500 text-slate-950 transition';
+        const off = 'px-3 py-1.5 rounded-lg font-bold text-slate-400 hover:text-white transition';
+        document.getElementById('btnModeExterior').className = mode === 'exterior' ? on : off;
+        document.getElementById('btnModeInterior').className = mode === 'interior' ? on : off;
+        document.getElementById('btnModePhases').className = mode === 'phases' ? on : off;
+
+        const p3d = document.getElementById('controlPanel3D'), pph = document.getElementById('controlPanelPhases'), itools = document.getElementById('interiorTools');
+        p3d.className = (mode === 'phases' ? 'hidden ' : '') + 'grid grid-cols-3 gap-2 text-xs';
+        pph.className = (mode === 'phases' ? '' : 'hidden ') + 'grid grid-cols-3 gap-2 text-xs';
+        itools.className = (mode === 'interior' ? 'flex ' : 'hidden ') + 'items-center gap-2';
+
+        rebuildModel(true);
+    }
+
+    function setArchitectStyle(style) {
+        V.style = style;
+        document.querySelectorAll('.style-btn').forEach(function (b) { b.classList.toggle('active', b.dataset.style === style); });
+        rebuildModel(false);
+    }
+
+    function setConstructionPhase(phase) {
+        V.phase = phase;
+        document.querySelectorAll('.phase-btn').forEach(function (b) { b.classList.toggle('active', b.dataset.phase === phase); });
+        rebuildModel(false);
+    }
+
+    function setInteriorFloor(f) {
+        V.floor = parseInt(f, 10); if (isNaN(V.floor)) V.floor = 0;
+        rebuildModel(true);
+    }
+
+    function toggleFurniture() {
+        V.furniture = !V.furniture;
+        document.getElementById('btnFurn').classList.toggle('active', V.furniture);
+        rebuildModel(false);
+    }
+
+    function toggleNight() {
+        V.night = !V.night;
+        document.getElementById('btnNight').classList.toggle('active', V.night);
+        document.getElementById('btnNight').innerText = V.night ? '☀️ إضاءة نهارية' : '🌙 إضاءة ليلية';
+        applyLighting(curParams || computeParams());
+    }
+
+    function setOrient(v) { V.orient = parseFloat(v) || 0; applyOrientation();
+        const o = document.getElementById('orientOut');
+        if (o) o.innerText = ['شمال','شمال شرق','شرق','جنوب شرق','جنوب','جنوب غرب','غرب','شمال غرب'][Math.round(((V.orient % 360) / 45)) % 8];
+        if (V.sunStudy && curParams) applySunStudy(curParams); }
+    function setSunHour(v) { V.hour = parseFloat(v); document.getElementById('hourOut').innerText = Math.floor(V.hour) + ':' + (V.hour % 1 ? '30' : '00'); if (curParams) applySunStudy(curParams); }
+    function setSunMonth(v) { V.month = parseInt(v, 10); if (curParams) applySunStudy(curParams); }
+    function toggleSunStudy() {
+        V.sunStudy = !V.sunStudy;
+        document.getElementById('btnSun').classList.toggle('active', V.sunStudy);
+        document.getElementById('sunPad').classList.toggle('hidden', !V.sunStudy);
+        applyLighting(curParams || computeParams());
+    }
+    function setCut(v) { V.cut = parseFloat(v) / 100; if (curParams) applyCut(curParams); }
+    function toggleDims() {
+        V.dims = !V.dims;
+        document.getElementById('btnDims').classList.toggle('active', V.dims);
+        rebuildModel(false);
+    }
+    function toggleAutoRotate() {
+        V.autoRotate = !V.autoRotate;
+        const b = document.getElementById('btnAuto');
+        b.classList.toggle('active', V.autoRotate);
+        b.innerText = V.autoRotate ? '🔁 دوران تلقائي' : '⏸️ الدوران متوقف';
+    }
+
+</script>
+  <script>
+    window.addEventListener('beforeprint', function () {
+      try {
+        const url = (typeof snapshot3D === 'function') ? snapshot3D() : null;
+        if (url) { document.getElementById('reportShot').src = url; document.getElementById('printShotWrap').classList.remove('hidden'); }
+      } catch (e) {}
+    });
+  </script>
+</body></html>
